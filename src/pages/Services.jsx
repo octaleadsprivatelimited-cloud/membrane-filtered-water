@@ -1,28 +1,25 @@
 import React from 'react';
-import ServicesHero from '../components/ServicesHero';
 
 const Services = () => {
   const servicesList = [
-    { title: "Standard Install", price: "₹999", img: "1542013936693-884638332954", desc: "Expert membrane system setup." },
-    { title: "Annual AMC", price: "₹2,499", img: "1518837695005-2083093ee35b", desc: "Full year membrane care." },
-    { title: "Membrane Swap", price: "₹1,899", img: "1550757750-4ce187a65014", desc: "Replace old membrane core." },
-    { title: "Flow Tuning", price: "₹499", img: "1527018601619-a508a2be00cd", desc: "Optimize water pressure." },
-    { title: "Pre-Filter Sync", price: "₹399", img: "1518531933037-91b2f5f229cc", desc: "Swap sediment filter." },
-    { title: "Carbon Swap", price: "₹599", img: "1523362628745-0c100150b504", desc: "Renew carbon block." },
-    { title: "Smart Setup", price: "₹299", img: "1542013936693-884638332954", desc: "App connectivity sync." },
-    { title: "Sanitization", price: "₹799", img: "1518837695005-2083093ee35b", desc: "Deep system cleaning." },
-    { title: "Leak Check", price: "₹349", img: "1550757750-4ce187a65014", desc: "Seal and tubing repair." },
-    { title: "Diagnostics", price: "₹249", img: "1527018601619-a508a2be00cd", desc: "Membrane health check." },
-    { title: "Relocation", price: "₹899", img: "1518531933037-91b2f5f229cc", desc: "Safe system moving." },
-    { title: "Part Replace", price: "₹449", img: "1523362628745-0c100150b504", desc: "Genuine spare parts." },
+    { title: "Standard Install", price: "₹999", img: "/membrane-tech.jpg", desc: "Expert membrane system setup." },
+    { title: "Annual AMC", price: "₹2,499", img: "/membrane-pure-water.jpg", desc: "Full year membrane care." },
+    { title: "Membrane Swap", price: "₹1,899", img: "/membrane-tech.jpg", desc: "Replace old membrane core." },
+    { title: "Flow Tuning", price: "₹499", img: "/membrane-pure-water.jpg", desc: "Optimize water pressure." },
+    { title: "Pre-Filter Sync", price: "₹399", img: "/membrane-tech.jpg", desc: "Swap sediment filter." },
+    { title: "Carbon Swap", price: "₹599", img: "/membrane-pure-water.jpg", desc: "Renew carbon block." },
+    { title: "Smart Setup", price: "₹299", img: "/smart-app.jpg", desc: "App connectivity sync." },
+    { title: "Sanitization", price: "₹799", img: "/membrane-pure-water.jpg", desc: "Deep system cleaning." },
+    { title: "Leak Check", price: "₹349", img: "/membrane-tech.jpg", desc: "Seal and tubing repair." },
+    { title: "Diagnostics", price: "₹249", img: "/membrane-pure-water.jpg", desc: "Membrane health check." },
+    { title: "Relocation", price: "₹899", img: "/membrane-tech.jpg", desc: "Safe system moving." },
+    { title: "Part Replace", price: "₹449", img: "/membrane-pure-water.jpg", desc: "Genuine spare parts." },
   ];
 
   return (
-    <div className="w-full bg-slate-50 min-h-screen pb-24">
-      <ServicesHero />
-
+    <div className="w-full bg-slate-50 min-h-screen pt-24 pb-24">
       {/* Reduced horizontal padding on mobile so 3 columns fit better */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 mt-16 md:mt-20">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 mt-4 md:mt-8">
         
         <div className="text-center mb-10 md:mb-16 px-4">
           <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3 md:mb-4">Available Services</h2>
@@ -43,7 +40,7 @@ const Services = () => {
                {/* Image with sharp corners */}
                <div className="w-full aspect-[4/3] bg-slate-100 overflow-hidden rounded-none">
                  <img 
-                   src={`https://images.unsplash.com/photo-${service.img}?q=80&w=400&auto=format&fit=crop`} 
+                   src={service.img} 
                    alt={service.title} 
                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-none" 
                  />

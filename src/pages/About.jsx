@@ -11,7 +11,7 @@ const About = () => {
   return (
     <div className="w-full bg-slate-50 min-h-screen">
       {/* Modern Split Hero Section */}
-      <section className="relative bg-white pt-24 pb-12 lg:pt-32 lg:pb-20 border-b border-slate-100">
+      <section className="relative bg-gradient-to-br from-sky-100 via-blue-50 to-white pt-24 pb-12 lg:pt-32 lg:pb-20 border-b border-slate-200">
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
                
@@ -29,7 +29,7 @@ const About = () => {
                
                <div className="relative mt-8 lg:mt-0">
                   {/* Using inline style for bg image to avoid Tailwind parsing issues and using a verified image ID */}
-                  <div className="aspect-[4/3] w-full shadow-2xl relative" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?q=80&w=1200&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                  <div className="aspect-[4/3] w-full shadow-2xl relative" style={{ backgroundImage: "url('/membrane-tech.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
                   </div>
                   <div className="absolute -bottom-6 -left-6 bg-white p-6 shadow-xl border border-slate-100">
                      <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Trusted globally by</p>
@@ -49,10 +49,10 @@ const About = () => {
               <div className="w-full lg:w-1/2 relative">
                  <div className="grid grid-cols-2 gap-4 md:gap-6">
                     <div className="aspect-[4/5] rounded-2xl overflow-hidden shadow-xl transform hover:-translate-y-2 transition-transform duration-300">
-                       <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1518837695005-2083093ee35b?q=80&w=600&auto=format&fit=crop')" }}></div>
+                       <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: "url('/membrane-pure-water.jpg')" }}></div>
                     </div>
                     <div className="aspect-[4/5] rounded-2xl overflow-hidden shadow-xl mt-12 transform hover:-translate-y-2 transition-transform duration-300">
-                       <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1523362628745-0c100150b504?q=80&w=600&auto=format&fit=crop')" }}></div>
+                       <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: "url('/membrane-tech.jpg')" }}></div>
                     </div>
                  </div>
                  
@@ -102,7 +102,7 @@ const About = () => {
              {/* Left side: Sleek Landscape Image */}
              <div className="w-full lg:w-1/2">
                 <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden shadow-lg border border-slate-100">
-                   <div className="w-full h-full bg-cover bg-center transition-transform duration-700 hover:scale-105" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop')" }}></div>
+                   <div className="w-full h-full bg-cover bg-center transition-transform duration-700 hover:scale-105" style={{ backgroundImage: "url('/membrane-pure-water.jpg')" }}></div>
                 </div>
              </div>
 
@@ -175,7 +175,7 @@ const About = () => {
              {/* Right side: Large Image with floating card */}
              <div className="relative mt-8 lg:mt-0">
                 <div className="aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl relative">
-                   <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 hover:scale-105" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1542013936693-884638332954?q=80&w=800&auto=format&fit=crop')" }}></div>
+                   <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 hover:scale-105" style={{ backgroundImage: "url('/membrane-tech.jpg')" }}></div>
                 </div>
                 {/* Floating highlight box */}
                 <div className="absolute top-10 -left-6 md:-left-12 bg-white p-6 rounded-2xl shadow-xl border border-slate-100 hidden sm:block max-w-[280px]">

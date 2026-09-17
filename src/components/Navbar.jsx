@@ -26,14 +26,15 @@ const Navbar = () => {
   ];
 
   return (
-    <header className="fixed w-full z-50 bg-white shadow-sm border-b border-slate-100 py-3">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-        <Link to="/" className="flex items-center gap-2">
-          <Droplets className="h-8 w-8 text-primary" />
-          <span className="font-bold text-xl text-slate-900">
-            AquaPure
-          </span>
-        </Link>
+    <header className="fixed w-full z-50 transition-all duration-300 bg-white/95 backdrop-blur-sm shadow-sm border-b border-slate-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-14 md:h-16">
+          <Link to="/" className="flex items-center gap-2">
+            <Droplets className="h-6 w-6 text-primary" />
+            <span className="font-bold text-xl text-slate-900 tracking-tight">
+              AquaPure
+            </span>
+          </Link>
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-6">
@@ -53,7 +54,7 @@ const Navbar = () => {
           ))}
           <Link
             to="/contact"
-            className="ml-4 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-md font-semibold transition-colors shadow-sm"
+            className="ml-4 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-semibold transition-colors shadow-sm text-sm"
           >
             Buy Now
           </Link>
@@ -66,6 +67,7 @@ const Navbar = () => {
         >
           {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
+      </div>
       </div>
 
       {/* Mobile Drawer */}

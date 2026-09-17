@@ -1,7 +1,7 @@
 import React from 'react';
 
 const ContactHero = () => (
-  <section className="bg-white relative overflow-hidden border-b border-slate-100">
+  <section className="bg-gradient-to-br from-sky-50 via-white to-blue-50 relative overflow-hidden border-b border-slate-100">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Top padding accounts for navbar, matching the rest of the site's hero sections */}
       <div className="flex flex-col lg:flex-row items-center pt-28 pb-10 lg:pt-32 lg:pb-14 gap-8 lg:gap-16">
@@ -27,7 +27,7 @@ const ContactHero = () => (
         <div className="w-full lg:w-1/2 relative z-10">
           <div className="relative aspect-[16/9] lg:aspect-[5/3] rounded-2xl overflow-hidden shadow-xl">
             <img 
-              src="https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?q=80&w=1200&auto=format&fit=crop" 
+              src="/smart-app.jpg" 
               alt="Contact Support Team" 
               className="w-full h-full object-cover"
             />

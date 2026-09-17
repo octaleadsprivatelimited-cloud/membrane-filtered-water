@@ -26,7 +26,7 @@ const ProductDetails = () => {
   }
 
   return (
-    <div className="w-full bg-white min-h-screen pt-24 pb-16 font-sans">
+    <div className="w-full bg-gradient-to-br from-sky-50 via-slate-50 to-white min-h-screen pt-24 pb-16 font-sans">
       
       {/* Product Hero Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">

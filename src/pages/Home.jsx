@@ -1,9 +1,29 @@
-import React, { useRef } from 'react';
-import { Shield, Droplet, Zap, ArrowRight, CheckCircle, Smartphone, Truck, PenTool, PhoneCall, Star, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Shield, Zap, Droplet, ArrowRight, CheckCircle, Smartphone, PenTool, Truck, PhoneCall, ChevronLeft, ChevronRight, Star, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Home = () => {
   const scrollContainerRef = useRef(null);
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+
+  useEffect(() => {
+    if (isCarouselPaused) return;
+    
+    const interval = setInterval(() => {
+      if (scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+        // Scroll back to beginning if we are at the end, else scroll forward
+        if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
+          container.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          const scrollAmount = window.innerWidth > 768 ? 400 : 280;
+          container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isCarouselPaused]);
 
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
@@ -30,13 +50,18 @@ const Home = () => {
       
       {/* 1. Full-Bleed Nature/Membrane Hero Banner */}
       <section className="relative w-full min-h-[90vh] h-auto flex items-center overflow-hidden py-24 lg:py-32">
-        {/* Background Image */}
+        {/* Background Video */}
         <div className="absolute inset-0">
-          <img 
-            src="https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?q=80&w=2000&auto=format&fit=crop" 
-            alt="Pure Water Landscape" 
+          <video 
+            autoPlay 
+            loop 
+            muted 
+            playsInline 
             className="w-full h-full object-cover"
-          />
+          >
+            <source src="/water-bg.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
           {/* Gradient Overlay for text readability */}
           <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 via-slate-900/60 to-transparent"></div>
           <div className="absolute inset-0 bg-slate-900/30 lg:bg-transparent"></div>
@@ -91,7 +116,7 @@ const Home = () => {
                 
                 {/* Main Front Card */}
                 <div className="w-[280px] h-[360px] rounded-3xl overflow-hidden relative shadow-2xl z-20 border-2 border-white/10 transform -translate-x-16">
-                  <img src="https://images.unsplash.com/photo-1542013936693-884638332954?q=80&w=600&auto=format&fit=crop" className="w-full h-full object-cover" alt="Card 1" />
+                  <img src="/membrane-pure-water.jpg" className="w-full h-full object-cover" alt="Card 1" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                   <div className="absolute bottom-6 left-6 text-white">
                     <div className="flex items-start gap-2">
@@ -111,7 +136,7 @@ const Home = () => {
 
                 {/* Secondary Back Card */}
                 <div className="w-[200px] h-[280px] rounded-3xl overflow-hidden relative shadow-xl z-10 opacity-80 transform -translate-x-6 absolute right-0">
-                  <img src="https://images.unsplash.com/photo-1523362628745-0c100150b504?q=80&w=400&auto=format&fit=crop" className="w-full h-full object-cover" alt="Card 2" />
+                  <img src="/membrane-tech.jpg" className="w-full h-full object-cover" alt="Card 2" />
                   <div className="absolute inset-0 bg-black/40"></div>
                   <div className="absolute bottom-4 left-4 text-white/50">
                     <div className="flex items-start gap-1">
@@ -130,49 +155,56 @@ const Home = () => {
         </div>
       </section>
 
-      {/* 2. Trust / Service Strip */}
-      <section className="bg-slate-900 border-b-4 border-primary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-slate-700/50">
-             
-             <div className="flex items-center justify-center gap-3 p-4 lg:p-5 hover:bg-slate-800 transition-colors">
-                <div className="bg-slate-800 p-2 rounded-lg text-yellow-400">
-                  <Truck className="w-5 h-5" />
-                </div>
-                <span className="font-bold text-white text-xs lg:text-sm uppercase tracking-wider">Free Delivery</span>
+      {/* 2. Trust / Service Strip (Auto-scrolling) */}
+      <section className="bg-slate-900 border-b-2 border-primary overflow-hidden py-2.5">
+        <div className="flex whitespace-nowrap animate-scroll items-center w-max">
+           {/* We render the same block twice to create a seamless infinite scroll loop */}
+           {[...Array(2)].map((_, blockIdx) => (
+             <div key={blockIdx} className="flex items-center justify-around w-max">
+                {[...Array(3)].map((_, setIdx) => (
+                  <React.Fragment key={setIdx}>
+                    <div className="flex items-center gap-2 px-6 md:px-10">
+                       <div className="text-yellow-400"><Truck className="w-4 h-4 md:w-5 md:h-5" /></div>
+                       <span className="font-bold text-white text-[10px] md:text-xs uppercase tracking-wider">Free Delivery</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-6 md:px-10">
+                       <div className="text-yellow-400"><PenTool className="w-4 h-4 md:w-5 md:h-5" /></div>
+                       <span className="font-bold text-white text-[10px] md:text-xs uppercase tracking-wider">Free Install</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-6 md:px-10">
+                       <div className="text-yellow-400"><Shield className="w-4 h-4 md:w-5 md:h-5" /></div>
+                       <span className="font-bold text-white text-[10px] md:text-xs uppercase tracking-wider">1 Yr Warranty</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-6 md:px-10">
+                       <div className="text-yellow-400"><PhoneCall className="w-4 h-4 md:w-5 md:h-5" /></div>
+                       <span className="font-bold text-white text-[10px] md:text-xs uppercase tracking-wider">24/7 Support</span>
+                    </div>
+                  </React.Fragment>
+                ))}
              </div>
-             
-             <div className="flex items-center justify-center gap-3 p-4 lg:p-5 hover:bg-slate-800 transition-colors">
-                <div className="bg-slate-800 p-2 rounded-lg text-yellow-400">
-                  <PenTool className="w-5 h-5" />
-                </div>
-                <span className="font-bold text-white text-xs lg:text-sm uppercase tracking-wider">Free Install</span>
-             </div>
-             
-             <div className="flex items-center justify-center gap-3 p-4 lg:p-5 hover:bg-slate-800 transition-colors">
-                <div className="bg-slate-800 p-2 rounded-lg text-yellow-400">
-                  <Shield className="w-5 h-5" />
-                </div>
-                <span className="font-bold text-white text-xs lg:text-sm uppercase tracking-wider">1 Yr Warranty</span>
-             </div>
-             
-             <div className="flex items-center justify-center gap-3 p-4 lg:p-5 hover:bg-slate-800 transition-colors">
-                <div className="bg-slate-800 p-2 rounded-lg text-yellow-400">
-                  <PhoneCall className="w-5 h-5" />
-                </div>
-                <span className="font-bold text-white text-xs lg:text-sm uppercase tracking-wider">24/7 Support</span>
-             </div>
-             
-          </div>
+           ))}
         </div>
+        
+        <style dangerouslySetInnerHTML={{__html: `
+          @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+          .animate-scroll {
+            animation: scroll 30s linear infinite;
+          }
+          .animate-scroll:hover {
+            animation-play-state: paused;
+          }
+        `}} />
       </section>
 
       {/* 3. About Us Snippet */}
-      <section className="py-20 bg-slate-50 border-t border-slate-200">
+      <section className="py-20 bg-gradient-to-br from-blue-50 via-slate-50 to-teal-50/30 border-t border-slate-200">
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
                <div className="w-full lg:w-1/2 relative">
-                  <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden shadow-2xl relative" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1523362628745-0c100150b504?q=80&w=2000&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                  <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden shadow-2xl relative" style={{ backgroundImage: "url('/membrane-pure-water.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
                   </div>
                   <div className="absolute -bottom-6 -right-6 md:-bottom-10 md:-right-10 bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-slate-100 max-w-xs">
                      <p className="text-4xl font-extrabold text-primary mb-2">15+</p>
@@ -201,47 +233,59 @@ const Home = () => {
       </section>
 
       {/* 4. Why Choose Us / Sharp Cards Grid */}
-      <section className="py-12 bg-slate-50 border-y border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-10">
-            <h2 className="text-2xl font-bold text-slate-900 mb-3 uppercase tracking-tight">Why Choose AquaPure?</h2>
-            <div className="w-12 h-1 bg-primary mx-auto"></div>
+      <section className="py-12 bg-slate-900 relative overflow-hidden">
+        {/* Decorative background pattern */}
+        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4 uppercase tracking-tight">Why Choose AquaPure?</h2>
+            <div className="w-16 h-1 bg-primary mx-auto mb-4"></div>
+            <p className="text-slate-300 text-base leading-relaxed">
+              We don't just filter water; we engineer absolute purity. Discover how our proprietary membrane technology outperforms standard purifiers.
+            </p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
             
-            <div className="bg-white p-6 border border-slate-200 rounded-none shadow-sm hover:shadow-md hover:border-blue-600 transition-all group">
-              <div className="w-12 h-12 bg-blue-50 text-blue-600 flex items-center justify-center mb-4 rounded-none group-hover:bg-blue-600 group-hover:text-white transition-colors">
+            <div className="bg-white p-5 md:p-6 border-b-4 border-blue-600 rounded-none shadow-lg hover:-translate-y-1 transition-transform duration-300 group">
+              <div className="w-12 h-12 bg-blue-50 text-blue-600 flex items-center justify-center mb-4 rounded-none group-hover:bg-blue-600 group-hover:text-white transition-colors border border-blue-100">
                 <Shield className="w-6 h-6" />
               </div>
               <h3 className="font-bold text-slate-900 text-sm mb-2 uppercase tracking-wide">100% Pure</h3>
               <p className="text-xs text-slate-600 leading-relaxed">High-density membrane ensures absolute safety with zero mixing of unpurified water.</p>
             </div>
             
-            <div className="bg-white p-6 border border-slate-200 rounded-none shadow-sm hover:shadow-md hover:border-teal-500 transition-all group">
-              <div className="w-12 h-12 bg-teal-50 text-teal-600 flex items-center justify-center mb-4 rounded-none group-hover:bg-teal-500 group-hover:text-white transition-colors">
+            <div className="bg-white p-5 md:p-6 border-b-4 border-teal-500 rounded-none shadow-lg hover:-translate-y-1 transition-transform duration-300 group">
+              <div className="w-12 h-12 bg-teal-50 text-teal-600 flex items-center justify-center mb-4 rounded-none group-hover:bg-teal-500 group-hover:text-white transition-colors border border-teal-100">
                 <Droplet className="w-6 h-6" />
               </div>
               <h3 className="font-bold text-slate-900 text-sm mb-2 uppercase tracking-wide">Advanced Tech</h3>
               <p className="text-xs text-slate-600 leading-relaxed">Precision pores filter out heavy metals, microplastics, and microscopic impurities.</p>
             </div>
             
-            <div className="bg-white p-6 border border-slate-200 rounded-none shadow-sm hover:shadow-md hover:border-sky-500 transition-all group">
-              <div className="w-12 h-12 bg-sky-50 text-sky-600 flex items-center justify-center mb-4 rounded-none group-hover:bg-sky-500 group-hover:text-white transition-colors">
+            <div className="bg-white p-5 md:p-6 border-b-4 border-sky-500 rounded-none shadow-lg hover:-translate-y-1 transition-transform duration-300 group">
+              <div className="w-12 h-12 bg-sky-50 text-sky-600 flex items-center justify-center mb-4 rounded-none group-hover:bg-sky-500 group-hover:text-white transition-colors border border-sky-100">
                 <Zap className="w-6 h-6" />
               </div>
               <h3 className="font-bold text-slate-900 text-sm mb-2 uppercase tracking-wide">Zero Wastage</h3>
               <p className="text-xs text-slate-600 leading-relaxed">Advanced recovery technology saves up to 20,000 liters of water annually.</p>
             </div>
 
-            <div className="bg-white p-6 border border-slate-200 rounded-none shadow-sm hover:shadow-md hover:border-green-500 transition-all group">
-              <div className="w-12 h-12 bg-green-50 text-green-600 flex items-center justify-center mb-4 rounded-none group-hover:bg-green-500 group-hover:text-white transition-colors">
+            <div className="bg-white p-5 md:p-6 border-b-4 border-green-500 rounded-none shadow-lg hover:-translate-y-1 transition-transform duration-300 group">
+              <div className="w-12 h-12 bg-green-50 text-green-600 flex items-center justify-center mb-4 rounded-none group-hover:bg-green-500 group-hover:text-white transition-colors border border-green-100">
                 <CheckCircle className="w-6 h-6" />
               </div>
               <h3 className="font-bold text-slate-900 text-sm mb-2 uppercase tracking-wide">Chemical-Free</h3>
               <p className="text-xs text-slate-600 leading-relaxed">Pure physical membrane filtration without the use of any harmful chemical additives.</p>
             </div>
 
+          </div>
+
+          <div className="text-center">
+            <Link to="/technology" className="inline-flex items-center gap-2 text-white font-bold tracking-widest uppercase text-xs border-b-2 border-primary pb-1 hover:text-primary transition-colors">
+              Explore Our Technology <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </section>
@@ -253,7 +297,7 @@ const Home = () => {
               
               <div className="order-2 lg:order-1 relative">
                  <div className="w-full aspect-square md:aspect-[4/3] bg-slate-100 rounded-3xl overflow-hidden flex items-center justify-center border border-slate-200 relative">
-                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1000&auto=format&fit=crop" alt="Smart App Lifestyle" className="w-full h-full object-cover" />
+                    <img src="/smart-app.jpg" alt="Smart App Lifestyle" className="w-full h-full object-cover" />
                  </div>
                  <div className="absolute -bottom-6 -right-6 md:bottom-8 md:-right-8 bg-white p-6 rounded-2xl shadow-xl border border-slate-100 hidden md:block">
                     <div className="flex items-center gap-4">
@@ -315,28 +359,34 @@ const Home = () => {
       </section>
 
       {/* NEW: Reviews Carousel Section */}
-      <section className="py-20 bg-slate-50 border-t border-slate-200 overflow-hidden">
+      <section 
+        className="py-12 bg-slate-100 overflow-hidden border-y border-slate-200"
+        onMouseEnter={() => setIsCarouselPaused(true)}
+        onMouseLeave={() => setIsCarouselPaused(false)}
+        onTouchStart={() => setIsCarouselPaused(true)}
+        onTouchEnd={() => setIsCarouselPaused(false)}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
             <div>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2">Loved by Families</h2>
-              <p className="text-slate-600 text-lg">See what our customers have to say about our membrane technology.</p>
+              <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-2 tracking-tight">Loved by Families</h2>
+              <p className="text-slate-600 text-base max-w-xl">See what our customers have to say about the pure taste and reliability of our membrane technology.</p>
             </div>
             
             {/* Desktop Navigation Buttons */}
-            <div className="hidden md:flex gap-3">
+            <div className="hidden md:flex gap-2">
               <button 
                 onClick={() => scroll('left')}
-                className="w-12 h-12 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white hover:border-primary transition-colors shadow-sm"
+                className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-primary hover:text-white transition-all shadow-sm"
               >
-                <ChevronLeft className="w-6 h-6" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
               <button 
                 onClick={() => scroll('right')}
-                className="w-12 h-12 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white hover:border-primary transition-colors shadow-sm"
+                className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-primary hover:text-white transition-all shadow-sm"
               >
-                <ChevronRight className="w-6 h-6" />
+                <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -344,23 +394,23 @@ const Home = () => {
           {/* Carousel Track */}
           <div 
             ref={scrollContainerRef}
-            className="flex overflow-x-auto gap-4 md:gap-6 pb-8 snap-x snap-mandatory hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0"
+            className="flex overflow-x-auto gap-4 md:gap-6 pb-6 snap-x snap-mandatory hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {reviews.map((review, idx) => (
               <div 
                 key={idx} 
-                className="snap-center shrink-0 w-[85%] sm:w-[350px] md:w-[400px] bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full"
+                className="snap-center shrink-0 w-[85%] sm:w-[320px] md:w-[380px] bg-white p-6 rounded-xl shadow-md border border-slate-100 flex flex-col h-full transform transition-transform hover:-translate-y-1"
               >
-                <div className="flex text-yellow-400 mb-4">
+                <div className="flex text-yellow-500 mb-4">
                   {[...Array(review.rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-current" />
+                    <Star key={i} className="w-4 h-4 fill-current" />
                   ))}
                 </div>
-                <p className="text-slate-700 italic flex-grow mb-6 text-lg">"{review.text}"</p>
-                <div className="flex justify-between items-center mt-auto pt-4 border-t border-slate-100">
-                  <span className="font-bold text-slate-900">{review.name}</span>
-                  <span className="text-sm text-slate-500">{review.date}</span>
+                <p className="text-slate-700 flex-grow mb-5 text-base leading-relaxed">"{review.text}"</p>
+                <div className="flex justify-between items-center mt-auto pt-4 border-t border-slate-50">
+                  <span className="font-bold text-slate-900 text-sm">{review.name}</span>
+                  <span className="text-xs font-semibold text-primary">{review.date}</span>
                 </div>
               </div>
             ))}
@@ -404,7 +454,7 @@ const Home = () => {
                   </div>
                   
                   <div className="w-full md:w-2/5 relative h-48 md:h-auto hidden sm:block">
-                     <img src="https://images.unsplash.com/photo-1542013936693-884638332954?q=80&w=800&auto=format&fit=crop" alt="Pouring fresh water" className="absolute inset-0 w-full h-full object-cover" />
+                     <img src="/membrane-pure-water.jpg" alt="Pouring fresh water" className="absolute inset-0 w-full h-full object-cover" />
                      <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-slate-900 to-transparent"></div>
                   </div>
                </div>
