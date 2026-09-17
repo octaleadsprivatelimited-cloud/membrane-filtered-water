@@ -12,6 +12,10 @@ import Technology from './pages/Technology';
 import Services from './pages/Services';
 import Contact from './pages/Contact';
 
+// Admin Pages
+import Login from './pages/admin/Login';
+import Dashboard from './pages/admin/Dashboard';
+
 // Scroll to top on route change
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -21,26 +25,44 @@ function ScrollToTop() {
   return null;
 }
 
+function MainLayout({ children }) {
+  const { pathname } = useLocation();
+  const isAdminRoute = pathname.startsWith('/admin');
+
+  if (isAdminRoute) {
+    return <main className="min-h-screen bg-slate-50">{children}</main>;
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      <main className="flex-grow">{children}</main>
+      <Footer />
+    </div>
+  );
+}
+
 function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex-grow">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/product/:id" element={<ProductDetails />} />
-            <Route path="/technology" element={<Technology />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="*" element={<div className="pt-32 pb-12 text-center text-xl font-bold">404 - Page Not Found</div>} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+      <MainLayout>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/product/:id" element={<ProductDetails />} />
+          <Route path="/technology" element={<Technology />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/contact" element={<Contact />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin" element={<Login />} />
+          <Route path="/admin/dashboard" element={<Dashboard />} />
+          
+          <Route path="*" element={<div className="pt-32 pb-12 text-center text-xl font-bold">404 - Page Not Found</div>} />
+        </Routes>
+      </MainLayout>
     </BrowserRouter>
   );
 }

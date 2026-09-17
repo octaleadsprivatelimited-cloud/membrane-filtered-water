@@ -1,11 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { products } from '../data/products';
-import { Star, Filter } from 'lucide-react';
+import { fetchProducts } from '../firebase/mockDb';
+import { Star, Filter, ChevronDown } from 'lucide-react';
 
 const Products = () => {
   const [selectedPrice, setSelectedPrice] = useState('All');
   const [selectedCapacity, setSelectedCapacity] = useState('All');
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const getProducts = async () => {
+      setLoading(true);
+      const data = await fetchProducts();
+      setProducts(data);
+      setLoading(false);
+    };
+    getProducts();
+  }, []);
   
   // Filter logic
   const filteredProducts = products.filter(product => {
@@ -85,7 +97,12 @@ const Products = () => {
           <div className="w-full lg:w-3/4 xl:w-4/5 flex-grow">
              <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
                 
-                {filteredProducts.length === 0 ? (
+                {loading ? (
+                  <div className="p-24 text-center">
+                    <div className="inline-block animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mb-4"></div>
+                    <p className="text-slate-500">Loading products from Database...</p>
+                  </div>
+                ) : filteredProducts.length === 0 ? (
                   <div className="p-12 text-center text-slate-500">
                     No products found matching your filters.
                   </div>

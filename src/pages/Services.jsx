@@ -1,20 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { fetchServices } from '../firebase/mockDb';
 
 const Services = () => {
-  const servicesList = [
-    { title: "Standard Install", price: "₹999", img: "/membrane-tech.jpg", desc: "Expert membrane system setup." },
-    { title: "Annual AMC", price: "₹2,499", img: "/membrane-pure-water.jpg", desc: "Full year membrane care." },
-    { title: "Membrane Swap", price: "₹1,899", img: "/membrane-tech.jpg", desc: "Replace old membrane core." },
-    { title: "Flow Tuning", price: "₹499", img: "/membrane-pure-water.jpg", desc: "Optimize water pressure." },
-    { title: "Pre-Filter Sync", price: "₹399", img: "/membrane-tech.jpg", desc: "Swap sediment filter." },
-    { title: "Carbon Swap", price: "₹599", img: "/membrane-pure-water.jpg", desc: "Renew carbon block." },
-    { title: "Smart Setup", price: "₹299", img: "/smart-app.jpg", desc: "App connectivity sync." },
-    { title: "Sanitization", price: "₹799", img: "/membrane-pure-water.jpg", desc: "Deep system cleaning." },
-    { title: "Leak Check", price: "₹349", img: "/membrane-tech.jpg", desc: "Seal and tubing repair." },
-    { title: "Diagnostics", price: "₹249", img: "/membrane-pure-water.jpg", desc: "Membrane health check." },
-    { title: "Relocation", price: "₹899", img: "/membrane-tech.jpg", desc: "Safe system moving." },
-    { title: "Part Replace", price: "₹449", img: "/membrane-pure-water.jpg", desc: "Genuine spare parts." },
-  ];
+  const [servicesList, setServicesList] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const getServices = async () => {
+      setLoading(true);
+      const data = await fetchServices();
+      setServicesList(data);
+      setLoading(false);
+    };
+    getServices();
+  }, []);
 
   return (
     <div className="w-full bg-slate-50 min-h-screen pt-24 pb-24">
@@ -29,8 +28,14 @@ const Services = () => {
         </div>
 
         {/* Grid: 3 cols on mobile, 4 on desktop */}
-        <div className="grid grid-cols-3 lg:grid-cols-4 gap-2 md:gap-6">
-           {servicesList.map((service, i) => (
+        {loading ? (
+          <div className="py-24 text-center">
+            <div className="inline-block animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mb-4"></div>
+            <p className="text-slate-500">Loading services from Database...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 lg:grid-cols-4 gap-2 md:gap-6">
+             {servicesList.map((service, i) => (
              <div 
                key={i} 
                // Sharp corners (rounded-none)
@@ -67,7 +72,8 @@ const Services = () => {
                
              </div>
            ))}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

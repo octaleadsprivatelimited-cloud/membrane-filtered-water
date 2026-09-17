@@ -1,37 +1,41 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Shield, Zap, Droplet, ArrowRight, CheckCircle, Smartphone, PenTool, Truck, PhoneCall, ChevronLeft, ChevronRight, Star, MapPin } from 'lucide-react';
+import { Play, CheckCircle, Shield, Droplets, ArrowRight, Smartphone, Droplet, Star, ChevronLeft, ChevronRight, Truck, PenTool, PhoneCall, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { fetchPageContent } from '../firebase/mockDb';
 
 const Home = () => {
   const scrollContainerRef = useRef(null);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+  const [content, setContent] = useState(null);
 
   useEffect(() => {
-    if (isCarouselPaused) return;
-    
-    const interval = setInterval(() => {
-      if (scrollContainerRef.current) {
-        const container = scrollContainerRef.current;
-        // Scroll back to beginning if we are at the end, else scroll forward
-        if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
-          container.scrollTo({ left: 0, behavior: 'smooth' });
-        } else {
-          const scrollAmount = window.innerWidth > 768 ? 400 : 280;
-          container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-        }
-      }
-    }, 3000);
+    fetchPageContent('home').then(setContent);
+  }, []);
 
+
+
+  // Auto-scroll logic
+  useEffect(() => {
+    let interval;
+    if (!isCarouselPaused && scrollContainerRef.current) {
+      interval = setInterval(() => {
+        if (scrollContainerRef.current) {
+          const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+          if (scrollLeft + clientWidth >= scrollWidth - 10) {
+            scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+          } else {
+            scrollContainerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+          }
+        }
+      }, 3000); // Scroll every 3 seconds
+    }
     return () => clearInterval(interval);
   }, [isCarouselPaused]);
 
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
-      const scrollAmount = window.innerWidth > 768 ? 400 : 280;
-      scrollContainerRef.current.scrollBy({ 
-        left: direction === 'left' ? -scrollAmount : scrollAmount, 
-        behavior: 'smooth' 
-      });
+      const scrollAmount = direction === 'left' ? -350 : 350;
+      scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
 
