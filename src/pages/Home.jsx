@@ -53,24 +53,8 @@ const Home = () => {
     <div className="w-full bg-white font-sans pt-16">
       
       {/* 1. Full-Bleed Nature/Membrane Hero Banner */}
-      <section className="relative w-full min-h-[90vh] h-auto flex items-center overflow-hidden py-24 lg:py-32">
-        {/* Background Video */}
-        <div className="absolute inset-0">
-          <video 
-            autoPlay 
-            loop 
-            muted 
-            playsInline 
-            className="w-full h-full object-cover"
-          >
-            <source src="/water-bg.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-          {/* Gradient Overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 via-slate-900/60 to-transparent"></div>
-          <div className="absolute inset-0 bg-slate-900/30 lg:bg-transparent"></div>
-        </div>
-
+      <section className="relative w-full min-h-[90vh] h-auto flex items-center overflow-hidden py-24 lg:py-32 bg-gradient-to-r from-[#384152] via-[#6e7787] to-slate-50">
+        
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-10">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
             
