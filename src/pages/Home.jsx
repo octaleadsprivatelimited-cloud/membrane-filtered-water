@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Play, CheckCircle, Shield, Droplets, ArrowRight, Smartphone, Droplet, Star, ChevronLeft, ChevronRight, Truck, PenTool, PhoneCall, MapPin } from 'lucide-react';
+import { Play, CheckCircle, Shield, Droplets, ArrowRight, Smartphone, Droplet, Star, ChevronLeft, ChevronRight, Truck, PenTool, PhoneCall, MapPin, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { fetchPageContent } from '../firebase/mockDb';
 
