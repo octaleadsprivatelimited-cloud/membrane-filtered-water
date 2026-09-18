@@ -46,28 +46,35 @@ const About = () => {
         </div>
       </section>
 
-      {/* 3. Our Mission */}
-      {content.missionDescription && (
+      {/* 3. Core Values (Mission & Vision) */}
+      {(content.missionDescription || content.visionDescription) && (
         <section className="bg-slate-50 py-16 lg:py-24">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <ShieldCheck className="w-8 h-8" />
-            </div>
-            <h3 className="text-3xl font-extrabold text-slate-900 mb-6">Our Mission</h3>
-            <p className="text-xl text-slate-600 leading-relaxed">{content.missionDescription}</p>
-          </div>
-        </section>
-      )}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              
+              {/* Mission Card */}
+              {content.missionDescription && (
+                <div className="bg-white rounded-3xl p-10 lg:p-14 shadow-sm border border-slate-100 flex flex-col items-center text-center">
+                  <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-6">
+                    <ShieldCheck className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-2xl font-extrabold text-slate-900 mb-4">Our Mission</h3>
+                  <p className="text-lg text-slate-600 leading-relaxed">{content.missionDescription}</p>
+                </div>
+              )}
 
-      {/* 4. Our Vision */}
-      {content.visionDescription && (
-        <section className="bg-white py-16 lg:py-24 border-t border-slate-100">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="w-16 h-16 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-8 h-8" />
+              {/* Vision Card */}
+              {content.visionDescription && (
+                <div className="bg-white rounded-3xl p-10 lg:p-14 shadow-sm border border-slate-100 flex flex-col items-center text-center">
+                  <div className="w-16 h-16 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center mb-6">
+                    <CheckCircle className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-2xl font-extrabold text-slate-900 mb-4">Our Vision</h3>
+                  <p className="text-lg text-slate-600 leading-relaxed">{content.visionDescription}</p>
+                </div>
+              )}
+              
             </div>
-            <h3 className="text-3xl font-extrabold text-slate-900 mb-6">Our Vision</h3>
-            <p className="text-xl text-slate-600 leading-relaxed">{content.visionDescription}</p>
           </div>
         </section>
       )}
