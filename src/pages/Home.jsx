@@ -61,7 +61,7 @@ const Home = () => {
             {/* Left Content */}
             <div className="w-[55%] text-white">
               <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-4">
-                <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-white/80 hidden sm:block" />
+                <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-white/80" />
                 <span className="text-white/80 text-[8px] sm:text-xs tracking-widest uppercase font-semibold">Membrane Tech, USA</span>
               </div>
               
@@ -69,7 +69,7 @@ const Home = () => {
                 The Purity Beyond <br className="hidden md:block" /> Your Imagination
               </h1>
               
-              <p className="text-[10px] sm:text-sm md:text-xl text-white/80 mb-4 sm:mb-10 max-w-md leading-relaxed font-light hidden sm:block">
+              <p className="text-[10px] sm:text-sm md:text-xl text-white/80 mb-4 sm:mb-10 max-w-md leading-relaxed font-light">
                 Discover thousands of liters of absolutely pure, membrane-filtered water with experiences you can trust.
               </p>
               
@@ -77,7 +77,7 @@ const Home = () => {
                 <Link to="/products" className="w-full sm:w-auto bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white px-3 py-1.5 sm:px-8 sm:py-3.5 rounded-full font-bold transition-all text-center text-[10px] sm:text-sm">
                   Explore
                 </Link>
-                <button className="flex items-center gap-1 sm:gap-3 text-white hover:text-white/80 transition-colors group hidden sm:flex">
+                <button className="flex items-center gap-1 sm:gap-3 text-white hover:text-white/80 transition-colors group">
                   <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full border border-white/40 flex items-center justify-center group-hover:scale-105 transition-transform bg-white/5 backdrop-blur-sm">
                     <svg className="w-3 h-3 sm:w-4 sm:h-4 fill-current ml-0.5 sm:ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                   </div>
@@ -89,11 +89,11 @@ const Home = () => {
               <div className="flex flex-col xl:flex-row gap-2 sm:gap-4 pb-4 sm:pb-0 z-20 relative">
                 <div className="bg-slate-900/60 backdrop-blur-md border border-white/20 rounded-lg sm:rounded-xl p-2 sm:p-5 max-w-[140px] sm:max-w-[280px] shadow-2xl">
                   <h4 className="font-bold text-white text-[9px] sm:text-sm mb-0 sm:mb-1">Excellence</h4>
-                  <p className="text-[7px] sm:text-xs text-white/80 leading-relaxed font-medium hidden sm:block">Striving for exceptional quality in every aspect of our membrane service.</p>
+                  <p className="text-[7px] sm:text-xs text-white/80 leading-relaxed font-medium">Striving for exceptional quality in every aspect of our membrane service.</p>
                 </div>
                 <div className="bg-slate-900/60 backdrop-blur-md border border-white/20 rounded-lg sm:rounded-xl p-2 sm:p-5 max-w-[140px] sm:max-w-[280px] shadow-2xl">
                   <h4 className="font-bold text-white text-[9px] sm:text-sm mb-0 sm:mb-1">Sustainable</h4>
-                  <p className="text-[7px] sm:text-xs text-white/80 leading-relaxed font-medium hidden sm:block">Promoting responsible zero-wastage practices for a greater future.</p>
+                  <p className="text-[7px] sm:text-xs text-white/80 leading-relaxed font-medium">Promoting responsible zero-wastage practices for a greater future.</p>
                 </div>
               </div>
             </div>
@@ -106,7 +106,7 @@ const Home = () => {
                 <div className="w-[90px] h-[120px] sm:w-[280px] sm:h-[360px] rounded-xl sm:rounded-3xl overflow-hidden relative shadow-2xl z-20 border sm:border-2 border-white/10 absolute left-0 sm:left-4 z-20">
                   <img src="/membrane-pure-water.jpg" className="w-full h-full object-cover" alt="Card 1" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                  <div className="absolute bottom-1.5 left-1.5 sm:bottom-6 sm:left-6 text-white hidden sm:block">
+                  <div className="absolute bottom-1.5 left-1.5 sm:bottom-6 sm:left-6 text-white">
                     <div className="flex items-start gap-2">
                       <Shield className="w-2 h-2 sm:w-4 sm:h-4 mt-0.5 text-blue-400" />
                       <div>
@@ -125,7 +125,7 @@ const Home = () => {
                 <div className="w-[75px] h-[100px] sm:w-[220px] sm:h-[300px] rounded-xl sm:rounded-3xl overflow-hidden relative shadow-xl z-10 opacity-85 absolute right-0 sm:right-4 z-10 top-1/2 -translate-y-1/2">
                   <img src="/membrane-tech.jpg" className="w-full h-full object-cover" alt="Card 2" />
                   <div className="absolute inset-0 bg-black/40"></div>
-                  <div className="absolute bottom-1.5 left-1.5 sm:bottom-4 sm:left-4 text-white/70 hidden sm:block">
+                  <div className="absolute bottom-1.5 left-1.5 sm:bottom-4 sm:left-4 text-white/70">
                     <div className="flex items-start gap-1">
                       <Shield className="w-2 h-2 sm:w-3 sm:h-3 mt-0.5" />
                       <div>
