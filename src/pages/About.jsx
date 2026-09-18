@@ -37,6 +37,20 @@ const About = () => {
                    {content.content}
                  </p>
                  
+                 {content.missionDescription && (
+                   <div className="mb-6">
+                     <h4 className="font-bold text-slate-900 mb-2">Our Mission</h4>
+                     <p className="text-slate-600 leading-relaxed">{content.missionDescription}</p>
+                   </div>
+                 )}
+                 
+                 {content.visionDescription && (
+                   <div className="mb-8">
+                     <h4 className="font-bold text-slate-900 mb-2">Our Vision</h4>
+                     <p className="text-slate-600 leading-relaxed">{content.visionDescription}</p>
+                   </div>
+                 )}
+                 
                  <div className="grid grid-cols-2 gap-8 pt-8 border-t border-slate-200">
                     <div>
                       <h4 className="text-4xl font-extrabold text-slate-900 mb-2">10k+</h4>

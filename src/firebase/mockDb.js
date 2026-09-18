@@ -62,6 +62,8 @@ let mockData = {
     about: {
       title: "Our Membrane Expertise",
       content: "For over a decade, AquaPure has been at the forefront of membrane filtration technology. We don't rely on chemical additives or gimmicks. Our sole focus is developing the most advanced semi-permeable membranes capable of removing impurities at a microscopic level, ensuring your family or business receives nothing but the purest water.",
+      missionDescription: "Our mission is to push the boundaries of membrane engineering. We believe that access to fundamentally pure water is a basic right, and our high-density nanofiltration structures are built to achieve 99.9% purification without relying on harmful chemicals.",
+      visionDescription: "We envision a world where every household has access to industrial-grade membrane purification. By investing heavily in R&D, we are creating membranes that last longer, filter smaller contaminants, and operate with absolute zero water wastage.",
       image: "/membrane-tech.jpg"
     },
     technology: {
