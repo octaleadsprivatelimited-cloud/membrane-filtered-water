@@ -99,10 +99,11 @@ const Home = () => {
             </div>
 
             {/* Right Images (Concept Style) */}
-            <div className="w-full lg:w-[45%] relative h-[300px] sm:h-[400px] lg:h-[500px]">
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center w-full justify-end">
-                {/* Image 1 */}
-                <div className="w-[180px] h-[240px] sm:w-[280px] sm:h-[360px] rounded-3xl overflow-hidden relative shadow-2xl z-20 border-2 border-white/10 transform -translate-x-8 sm:-translate-x-16">
+            <div className="w-full lg:w-[45%] flex justify-center lg:justify-end mt-8 lg:mt-0 relative min-h-[300px] sm:min-h-[400px] lg:min-h-[500px]">
+              <div className="relative flex items-center my-auto w-[300px] sm:w-[450px]">
+                
+                {/* Image 1 (Front) */}
+                <div className="w-[180px] h-[240px] sm:w-[280px] sm:h-[360px] rounded-3xl overflow-hidden relative shadow-2xl z-20 border-2 border-white/10 absolute left-0 sm:left-4 z-20">
                   <img src="/membrane-pure-water.jpg" className="w-full h-full object-cover" alt="Card 1" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                   <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 text-white">
@@ -114,25 +115,26 @@ const Home = () => {
                       </div>
                     </div>
                   </div>
-                  {/* Plus button */}
-                  <div className="absolute top-1/2 -right-3 sm:-right-4 -translate-y-1/2 w-6 h-6 sm:w-8 sm:h-8 bg-white rounded-full flex items-center justify-center text-black shadow-lg cursor-pointer hover:bg-slate-100">
+                  {/* Action button */}
+                  <div className="absolute top-1/2 -right-3 sm:-right-4 -translate-y-1/2 w-6 h-6 sm:w-8 sm:h-8 bg-white rounded-full flex items-center justify-center text-black shadow-lg cursor-pointer hover:bg-slate-100 z-30">
                     <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-0.5" />
                   </div>
                 </div>
 
-                {/* Image 2 (behind) */}
-                <div className="w-[140px] h-[180px] sm:w-[200px] sm:h-[280px] rounded-3xl overflow-hidden relative shadow-xl z-10 opacity-80 transform -translate-x-4 sm:-translate-x-6 absolute right-0">
+                {/* Image 2 (Behind) */}
+                <div className="w-[150px] h-[200px] sm:w-[220px] sm:h-[300px] rounded-3xl overflow-hidden relative shadow-xl z-10 opacity-85 absolute right-0 sm:right-4 z-10 top-1/2 -translate-y-1/2">
                   <img src="/membrane-tech.jpg" className="w-full h-full object-cover" alt="Card 2" />
                   <div className="absolute inset-0 bg-black/40"></div>
-                  <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 text-white/50">
+                  <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 text-white/70">
                     <div className="flex items-start gap-1">
                       <Shield className="w-3 h-3 mt-0.5" />
                       <div>
-                        <p className="font-bold text-[10px] sm:text-xs leading-tight">Zero Waste</p>
+                        <p className="font-bold text-[10px] sm:text-xs leading-tight text-white">Zero Waste</p>
                       </div>
                     </div>
                   </div>
                 </div>
+                
               </div>
             </div>
 
