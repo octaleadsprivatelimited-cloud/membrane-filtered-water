@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Droplets } from 'lucide-react';
+import { Droplets, ChevronDown, ChevronUp } from 'lucide-react';
 
 const Footer = () => {
+  const [openSection, setOpenSection] = useState(null);
+
+  const toggleSection = (section) => {
+    setOpenSection(openSection === section ? null : section);
+  };
+
   return (
     <footer className="relative text-slate-300 pt-16 pb-4 bg-slate-900">
       {/* Background Image */}
@@ -18,7 +24,7 @@ const Footer = () => {
       <div className="absolute inset-0 z-0 bg-slate-900/85"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-8">
           <div className="col-span-1 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
               <Droplets className="h-8 w-8 text-secondary" />
@@ -34,9 +40,17 @@ const Footer = () => {
             </div>
           </div>
           
-          <div>
-            <h4 className="text-white font-semibold mb-4">Quick Links</h4>
-            <ul className="space-y-2 text-sm">
+          <div className="border-t border-slate-700/50 md:border-0 pt-4 md:pt-0">
+            <h4 
+              className="text-white font-semibold mb-4 flex justify-between items-center cursor-pointer md:cursor-auto"
+              onClick={() => toggleSection('links')}
+            >
+              Quick Links
+              <span className="md:hidden">
+                {openSection === 'links' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </span>
+            </h4>
+            <ul className={`space-y-2 text-sm overflow-hidden transition-all duration-300 ${openSection === 'links' ? 'max-h-40' : 'max-h-0'} md:max-h-full`}>
               <li><Link to="/about" className="hover:text-secondary transition-colors">About Us</Link></li>
               <li><Link to="/product" className="hover:text-secondary transition-colors">Product Details</Link></li>
               <li><Link to="/technology" className="hover:text-secondary transition-colors">Technology</Link></li>
@@ -44,9 +58,17 @@ const Footer = () => {
             </ul>
           </div>
 
-          <div>
-            <h4 className="text-white font-semibold mb-4">Support</h4>
-            <ul className="space-y-2 text-sm">
+          <div className="border-t border-slate-700/50 md:border-0 pt-4 md:pt-0">
+            <h4 
+              className="text-white font-semibold mb-4 flex justify-between items-center cursor-pointer md:cursor-auto"
+              onClick={() => toggleSection('support')}
+            >
+              Support
+              <span className="md:hidden">
+                {openSection === 'support' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </span>
+            </h4>
+            <ul className={`space-y-2 text-sm overflow-hidden transition-all duration-300 ${openSection === 'support' ? 'max-h-40' : 'max-h-0'} md:max-h-full`}>
               <li><Link to="/contact" className="hover:text-secondary transition-colors">Contact Us</Link></li>
               <li><Link to="/faq" className="hover:text-secondary transition-colors">FAQs</Link></li>
               <li><Link to="/warranty" className="hover:text-secondary transition-colors">Warranty</Link></li>
@@ -54,7 +76,7 @@ const Footer = () => {
             </ul>
           </div>
 
-          <div>
+          <div className="border-t border-slate-700/50 md:border-0 pt-4 md:pt-0">
             <h4 className="text-white font-semibold mb-4">Stay Updated</h4>
             <p className="text-sm text-slate-300 mb-4">Subscribe for tips and offers.</p>
             <form className="flex" onSubmit={(e) => e.preventDefault()}>
