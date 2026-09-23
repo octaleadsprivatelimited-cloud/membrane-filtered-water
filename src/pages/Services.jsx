@@ -1,82 +1,57 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Wrench, ShieldCheck, Droplets, Gauge, FlaskConical, Sparkles, Truck, Smartphone, ArrowRight, Check } from 'lucide-react';
 import { fetchServices } from '../firebase/mockDb';
 
+const demoServices = [
+  { id: 'demo-quality', title: 'Water Quality Check', desc: 'Understand your water with a basic quality assessment and filtration recommendations.', price: 'Request a quote', category: 'Testing', icon: FlaskConical },
+  { id: 'demo-clean', title: 'System Sanitization', desc: 'A thorough cleaning of the storage tank and water lines as part of routine purifier care.', price: 'Request a quote', category: 'Maintenance', icon: Sparkles },
+  { id: 'demo-move', title: 'Purifier Relocation', desc: 'Careful disconnection and reinstallation when you move your purifier to a new home.', price: 'Request a quote', category: 'Installation', icon: Truck },
+  { id: 'demo-smart', title: 'Smart App Setup', desc: 'Get connected with app pairing, monitoring setup, and a guided walkthrough of your system.', price: 'Request a quote', category: 'Support', icon: Smartphone },
+];
+const categories = ['All services', 'Installation', 'Maintenance', 'Testing', 'Support'];
 const Services = () => {
   const [servicesList, setServicesList] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [error, setError] = useState(false);
+  const [category, setCategory] = useState('All services');
   useEffect(() => {
-    const getServices = async () => {
-      setLoading(true);
-      const data = await fetchServices();
-      setServicesList(data);
-      setLoading(false);
-    };
-    getServices();
+    let active = true;
+    fetchServices().then(data => { if (active) setServicesList(data); }).catch(() => { if (active) setError(true); }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
-
+  const services = [...servicesList.map((service, index) => ({ ...service, category: ['Installation', 'Maintenance', 'Maintenance', 'Support'][index % 4], icon: [Wrench, ShieldCheck, Droplets, Gauge][index % 4] })), ...demoServices];
+  const visible = services.filter(service => category === 'All services' || service.category === category);
   return (
-    <div className="w-full bg-slate-50 min-h-screen pt-24 pb-24">
-      {/* Reduced horizontal padding on mobile so 3 columns fit better */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 mt-4 md:mt-8">
-        
-        <div className="text-center mb-10 md:mb-16 px-4">
-          <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3 md:mb-4">Available Services</h2>
-          <p className="text-xs md:text-lg text-slate-600 max-w-2xl mx-auto">
-            Book professional maintenance, installation, and repair services for your membrane water purifier.
-          </p>
+    <div className="services-page">
+      <section className="services-hero">
+        <div className="services-container services-hero-grid">
+          <div><span className="services-eyebrow">AQUAPURE CARE</span><h1>Expert care.<br /><span>For every drop.</span></h1><p>From the first installation to everyday maintenance, find the right support to keep your water system working at its best.</p><a href="#service-catalog" className="services-button">Explore services <ArrowRight size={17} /></a></div>
+          <aside className="services-care"><Wrench size={30} strokeWidth={1.4} /><h2>Support through the life<br />of your system.</h2>{['Installation & setup', 'Routine maintenance', 'Troubleshooting & guidance'].map(item => <div key={item}><Check size={16} />{item}</div>)}<span>ONE PLACE FOR YOUR WATER CARE</span></aside>
         </div>
-
-        {/* Grid: 3 cols on mobile, 4 on desktop */}
-        {loading ? (
-          <div className="py-24 text-center">
-            <div className="inline-block animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mb-4"></div>
-            <p className="text-slate-500">Loading services from Database...</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 lg:grid-cols-4 gap-2 md:gap-6">
-             {servicesList.map((service, i) => (
-             <div 
-               key={i} 
-               // Sharp corners (rounded-none)
-               className="bg-white shadow-sm border border-slate-200 flex flex-col h-full rounded-none group hover:shadow-xl transition-all"
-             >
-               
-               {/* Image with sharp corners */}
-               <div className="w-full aspect-[4/3] bg-slate-100 overflow-hidden rounded-none">
-                 <img 
-                   src={service.img} 
-                   alt={service.title} 
-                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-none" 
-                 />
-               </div>
-               
-               {/* Content with highly responsive text sizes to fit 3 cols on mobile */}
-               <div className="p-2 md:p-5 flex flex-col flex-grow">
-                 <h3 className="text-[11px] md:text-lg font-bold text-slate-900 mb-1 md:mb-2 line-clamp-1">{service.title}</h3>
-                 <p className="text-[9px] md:text-sm text-slate-600 mb-2 md:mb-4 flex-grow line-clamp-2 md:line-clamp-none leading-snug">{service.desc}</p>
-                 <div className="mt-auto">
-                   <p className="text-[11px] md:text-xl font-bold text-blue-600 mb-1.5 md:mb-4">{service.price}</p>
-                   <button 
-                     onClick={(e) => {
-                       e.preventDefault();
-                       window.open(`https://wa.me/919876543210?text=${encodeURIComponent(`Hi, I'm interested in booking the ${service.title} service`)}`, '_blank');
-                     }}
-                     className="w-full py-1.5 md:py-2.5 px-0.5 bg-[#25D366] hover:bg-[#128C7E] text-white text-[6.5px] min-[375px]:text-[7.5px] sm:text-[9px] md:text-sm font-bold rounded-none transition-colors uppercase flex items-center justify-center gap-1 md:gap-2 tracking-tighter md:tracking-normal"
-                   >
-                     <svg className="w-2.5 h-2.5 md:w-4 md:h-4 fill-current flex-shrink-0" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.888-.788-1.489-1.761-1.663-2.06-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                     <span className="truncate">Book through WhatsApp</span>
-                   </button>
-                 </div>
-               </div>
-               
-             </div>
-           ))}
-          </div>
-        )}
-      </div>
+      </section>
+      <section id="service-catalog" className="services-catalog">
+        <div className="services-container">
+          <div className="services-section-heading"><div><span className="services-eyebrow">HOW CAN WE HELP?</span><h2>Care that fits your needs.</h2></div><p>Explore installation, maintenance, and support options.<br />Additional services are shown as demo examples.</p></div>
+          <div className="service-filters" aria-label="Filter services">{categories.map(item => <button key={item} type="button" aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}</div>
+          {loading ? <p role="status">Loading services…</p> : <>
+            {error && <p role="status">Existing services could not be loaded. Demo services are available below.</p>}
+            <div className="service-grid">{visible.map(({ icon: Icon, ...service }) => <article className="service-card" key={service.id}>
+              <div className="service-card-top"><span className="service-icon"><Icon size={24} strokeWidth={1.5} /></span><span>{service.category}</span></div>
+              <h3>{service.title}</h3><p>{service.desc}</p>
+              {service.id.startsWith('demo-') && <span className="service-demo">Demo service</span>}
+              <div className="service-card-bottom"><strong>{service.price}</strong><Link to={`/contact?service=${encodeURIComponent(service.title)}`} aria-label={`Enquire about ${service.title}`}>Enquire <ArrowRight size={16} /></Link></div>
+            </article>)}</div>
+            {visible.length === 0 && <p>No services in this category yet.</p>}
+          </>}
+        </div>
+      </section>
+      <section className="services-process"><div className="services-container"><span className="services-eyebrow">A SIMPLE NEXT STEP</span><h2>From enquiry to everyday confidence.</h2><div className="services-steps">{[
+        ['01', 'Tell us what you need', 'Choose a service and get in touch with our team.'],
+        ['02', 'Confirm the details', 'Discuss your system, service scope, and a suitable visit time.'],
+        ['03', 'Get your system cared for', 'Receive support and practical guidance for ongoing maintenance.'],
+      ].map(([number, title, desc]) => <article key={number}><span>{number}</span><h3>{title}</h3><p>{desc}</p></article>)}</div><div className="services-help"><div><h3>Not sure which service to choose?</h3><p>Tell us about your purifier. We’ll help you find the next step.</p></div><Link to="/contact" className="services-button">Talk to our team <ArrowRight size={17} /></Link></div></div></section>
     </div>
   );
 };
-
 export default Services;

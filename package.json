@@ -7,11 +7,19 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "api": "node --env-file-if-exists=.env server/index.mjs",
+    "emulators": "node scripts/emulators.mjs",
+    "seed": "node --env-file-if-exists=.env scripts/seed.mjs",
+    "grant-admin": "node --env-file-if-exists=.env scripts/grant-admin.mjs",
+    "test:commerce": "node --test tests/commerce.test.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
     "firebase": "^12.19.0",
+    "firebase-admin": "^14.4.0",
     "framer-motion": "^13.3.0",
     "lucide-react": "^1.46.0",
     "react": "^19.2.8",

@@ -1,126 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { Mail, Phone, MapPin, Send, Building2, Globe2 } from 'lucide-react';
-import { fetchPageContent } from '../firebase/mockDb';
+import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Mail, Phone, MapPin, Send, Headphones, ArrowUpRight, Clock } from 'lucide-react';
 
 const Contact = () => {
-  const [content, setContent] = useState(null);
-
-  useEffect(() => {
-    fetchPageContent('contact').then(setContent);
-  }, []);
-
-  if (!content) return <div className="min-h-screen pt-24 text-center">Loading...</div>;
-
+  const [params] = useSearchParams();
+  const [submitted, setSubmitted] = useState(false);
+  const service = params.get('service') || '';
   return (
-    <div className="w-full min-h-screen bg-slate-50 font-sans pb-24">
-      
-      {/* Page Header (Hero) */}
-      <section className="relative bg-slate-900 py-20 px-4 sm:px-6 lg:px-8 mt-16 text-center">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-4">
-          Contact Us
-        </h1>
-        <p className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
-          {content.subtitle}
-        </p>
-      </section>
-
-      {/* Quick Contact Cards */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 my-16">
-        {/* Mobile: 2x2 grid, Desktop: 1 row (4 columns) */}
+    <div className="contact-page">
+      <section className="contact-hero"><div className="contact-container"><span className="contact-eyebrow">LET’S TALK WATER</span><div className="contact-hero-row"><h1>A question today.<br /><span>A clearer tomorrow.</span></h1><div><p>Choosing a purifier, planning a service, or just looking for advice? Start a conversation with AquaPure.</p><span className="contact-demo">Demo contact details · India</span></div></div></div></section>
+      <section className="contact-cards-section" aria-label="Contact options"><div className="contact-container">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-          
-          <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-100 shadow-sm flex flex-col items-center text-center">
-            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-4 md:mb-6">
-              <Mail className="w-6 h-6 md:w-8 md:h-8" />
-            </div>
-            <h3 className="text-sm md:text-lg font-bold text-slate-900 mb-1 md:mb-2">Email</h3>
-            <a href={`mailto:${content.email}`} className="text-xs md:text-sm font-semibold text-blue-600 hover:text-blue-800 break-all">{content.email}</a>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-100 shadow-sm flex flex-col items-center text-center">
-            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-4 md:mb-6">
-              <Phone className="w-6 h-6 md:w-8 md:h-8" />
-            </div>
-            <h3 className="text-sm md:text-lg font-bold text-slate-900 mb-1 md:mb-2">Phone</h3>
-            <p className="text-xs md:text-sm font-semibold text-slate-700">{content.phone}</p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-100 shadow-sm flex flex-col items-center text-center">
-            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-4 md:mb-6">
-              <MapPin className="w-6 h-6 md:w-8 md:h-8" />
-            </div>
-            <h3 className="text-sm md:text-lg font-bold text-slate-900 mb-1 md:mb-2">HQ</h3>
-            <p className="text-xs md:text-sm font-semibold text-slate-700">San Francisco, CA</p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-100 shadow-sm flex flex-col items-center text-center">
-            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-4 md:mb-6">
-              <Globe2 className="w-6 h-6 md:w-8 md:h-8" />
-            </div>
-            <h3 className="text-sm md:text-lg font-bold text-slate-900 mb-1 md:mb-2">Europe</h3>
-            <p className="text-xs md:text-sm font-semibold text-slate-700">London, UK</p>
-          </div>
-
+          {[
+            { icon: Mail, title: 'Email us', value: 'care@aquapure.example', note: 'Product & service enquiries' },
+            { icon: Phone, title: 'Call our team', value: '+91 00000 00000', note: 'Demo sales number' },
+            { icon: MapPin, title: 'Visit us', value: 'Bengaluru, Karnataka', note: 'Demo city location' },
+            { icon: Headphones, title: 'Service support', value: '+91 00000 00001', note: 'Demo support number' },
+          ].map(({ icon: Icon, title, value, note }) => <article className="contact-card" key={title}><span className="contact-card-icon"><Icon size={24} strokeWidth={1.5} /></span><h2>{title}</h2><p>{value}</p><span>{note}</span></article>)}
         </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
-          
-          {/* Left Column: Form */}
-          <div className="bg-white p-8 md:p-10 border border-slate-100 rounded-2xl shadow-sm">
-            <h2 className="text-2xl font-extrabold text-slate-900 mb-8">
-              Send us a message
-            </h2>
-            
-            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">First Name *</label>
-                  <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Last Name *</label>
-                  <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all" required />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Email *</label>
-                <input type="email" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all" required />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Message *</label>
-                <textarea rows="5" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all" required></textarea>
-              </div>
-
-              <div className="pt-2">
-                <button type="submit" className="w-full px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all text-sm">
-                  Send Message
-                </button>
-              </div>
-            </form>
-          </div>
-
-          {/* Right Column: Map */}
-          <div className="h-full min-h-[500px] w-full bg-slate-200 border border-slate-100 shadow-sm rounded-2xl overflow-hidden">
-            <iframe 
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d100940.1708761408!2d-122.50764005116752!3d37.75767927429188!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80859a6d00690021%3A0x4a501367f076adff!2sSan%20Francisco%2C%20CA!5e0!3m2!1sen!2sus!4v1695240212345!5m2!1sen!2sus" 
-              width="100%" 
-              height="100%" 
-              style={{ border: 0, minHeight: '100%' }} 
-              allowFullScreen="" 
-              loading="lazy" 
-              referrerPolicy="no-referrer-when-downgrade"
-              title="HQ Location"
-            ></iframe>
-          </div>
-
+      </div></section>
+      <section className="contact-main"><div className="contact-container contact-main-grid">
+        <div className="contact-form-panel"><span className="contact-eyebrow">HOW CAN WE HELP?</span><h2>Tell us what you need.</h2><p className="contact-form-intro">Share a few details to preview your enquiry.</p>
+          <form onSubmit={event => { event.preventDefault(); setSubmitted(true); }} onChange={() => setSubmitted(false)}>
+            <div className="contact-form-row"><div><label htmlFor="contact-first">First name *</label><input id="contact-first" name="firstName" autoComplete="given-name" placeholder="First name" required /></div><div><label htmlFor="contact-last">Last name *</label><input id="contact-last" name="lastName" autoComplete="family-name" placeholder="Last name" required /></div></div>
+            <div className="contact-form-row"><div><label htmlFor="contact-email">Email *</label><input id="contact-email" name="email" type="email" autoComplete="email" placeholder="you@example.com" required /></div><div><label htmlFor="contact-phone">Phone number</label><input id="contact-phone" name="phone" type="tel" autoComplete="tel" placeholder="+91 mobile number" /></div></div>
+            <div><label htmlFor="contact-subject">Enquiry subject *</label><input id="contact-subject" name="subject" defaultValue={service} placeholder="Product advice, installation, service…" required /></div>
+            <div><label htmlFor="contact-message">How can we help? *</label><textarea id="contact-message" name="message" rows={4} placeholder="Tell us about your water system or service needs." required /></div>
+            <div className="contact-form-bottom"><p>Demo form only. No message will be sent.</p><button type="submit">Preview enquiry <Send size={16} /></button></div>
+            {submitted && <p className="contact-success" role="status">Your demo enquiry is complete. This preview has not sent or stored your details.</p>}
+          </form>
         </div>
-      </div>
+        <aside className="contact-location"><div className="contact-location-heading"><span className="contact-eyebrow">FIND US IN INDIA</span><h2>Closer to your home.</h2><p>Bengaluru, Karnataka, India</p><span className="contact-map-note">Illustrative city location for this demo.</span></div>
+          <iframe src="https://www.google.com/maps?q=Bengaluru%2C%20Karnataka%2C%20India&output=embed" title="Bengaluru demo city map" loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
+          <a className="contact-map-link" href="https://www.google.com/maps/search/?api=1&query=Bengaluru%2C%20Karnataka%2C%20India" target="_blank" rel="noopener noreferrer">Explore Bengaluru on Maps <ArrowUpRight size={18} /></a>
+          <div className="contact-hours"><Clock size={20} /><div><strong>Demo support hours</strong><p>Monday–Saturday · 9:00 AM–6:00 PM IST</p></div></div>
+        </aside>
+      </div></section>
     </div>
   );
 };
-
 export default Contact;

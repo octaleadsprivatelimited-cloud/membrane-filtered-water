@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Beaker, Shield, Activity, Droplets } from 'lucide-react';
+import { Beaker, Shield, Activity, Droplets, ArrowRight, ArrowDown } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { fetchPageContent } from '../firebase/mockDb';
 
 const Technology = () => {
@@ -39,129 +40,36 @@ const Technology = () => {
   if (!content) return <div className="min-h-screen pt-24 text-center">Loading...</div>;
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 font-sans pb-24">
-      
-      {/* Dynamic Hero Section */}
-      <section className="bg-gradient-to-br from-sky-50 via-white to-blue-50 relative overflow-hidden border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row items-center pt-28 pb-10 lg:pt-32 lg:pb-14 gap-8 lg:gap-16">
-            
-            {/* Left Content */}
-            <div className="w-full lg:w-1/2 flex flex-col justify-center text-center lg:text-left z-10">
-              <div className="inline-flex items-center justify-center lg:justify-start gap-3 mb-4">
-                <span className="w-10 h-0.5 bg-blue-600"></span>
-                <span className="text-blue-600 font-bold uppercase tracking-widest text-xs">Our Core Technology</span>
-              </div>
-              
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-4 leading-tight">
-                {content.title}
-              </h1>
-              
-              <p className="text-base md:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                {content.content}
-              </p>
-            </div>
-
-            {/* Right Image */}
-            <div className="w-full lg:w-1/2 relative z-10">
-              <div className="relative aspect-[16/9] lg:aspect-[5/3] rounded-2xl overflow-hidden shadow-xl">
-                <img 
-                  src={content.image} 
-                  alt="Advanced Membrane Filtration" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-blue-50 rounded-full -z-10 blur-3xl opacity-50"></div>
-            </div>
-
+    <div className="technology-page">
+      <section className="tech-hero" aria-labelledby="tech-heading">
+        <div className="tech-container">
+          <div className="tech-hero-top"><span className="tech-eyebrow">THE SCIENCE BEHIND EVERY DROP</span><span className="tech-edition">AQUAPURE / TECHNOLOGY</span></div>
+          <div className="tech-hero-grid">
+            <div className="tech-hero-copy"><h1 id="tech-heading">{content.title}</h1><p>{content.content}</p><a className="tech-primary" href="#purification">See how it works <ArrowDown size={17} /></a></div>
+            <figure className="tech-diagram"><img src="/membrane-tech.jpg" alt="Cutaway illustration showing membrane filtration layers" /><figcaption><span>ENGINEERED FOR PURITY</span><span>Membrane filtration</span></figcaption></figure>
           </div>
+          <div className="tech-hero-foot"><span><Shield size={17} /> Precision filtration</span><span><Droplets size={17} /> Thoughtful water care</span><span><Beaker size={17} /> Material science</span></div>
         </div>
       </section>
-
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">The 4-Stage Purification Process</h2>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Our industry-leading membrane technology ensures every drop of water is meticulously purified to the highest safety standards.
-          </p>
+      <section id="purification" className="tech-process" aria-labelledby="process-heading">
+        <div className="tech-container">
+          <div className="tech-section-heading"><div><span className="tech-eyebrow">HOW IT WORKS</span><h2 id="process-heading">Four stages.<br />One clear purpose.</h2></div><p>Follow the water from its first filter to its final polishing stage. Each layer has a specific job in the purification process.</p></div>
+          <ol className="tech-stages">{stages.map(({ step, title, desc, icon: Icon }) => <li key={step} className="tech-stage"><div className="tech-stage-top"><span>{step}</span><Icon size={24} strokeWidth={1.5} aria-hidden="true" /></div><h3>{title}</h3><p>{desc}</p><div className="tech-stage-rule" aria-hidden="true" /></li>)}</ol>
         </div>
-
-        {/* 4 Cards Layout: 2x2 on Mobile, 1x4 on Desktop */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {stages.map((stage) => (
-            <div 
-              key={stage.step} 
-              className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-lg hover:border-blue-200 transition-all duration-300 flex flex-col group"
-            >
-              <div className="flex justify-between items-start mb-6">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
-                  <stage.icon className="w-5 h-5 md:w-6 md:h-6" />
-                </div>
-                <span className="text-3xl md:text-4xl font-black text-slate-100 group-hover:text-blue-50 transition-colors duration-300">
-                  {stage.step}
-                </span>
-              </div>
-              
-              <h3 className="text-base md:text-xl font-bold text-slate-900 mb-3 leading-tight">{stage.title}</h3>
-              <p className="text-xs md:text-sm text-slate-600 leading-relaxed flex-grow">
-                {stage.desc}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* The Membrane Advantage Section */}
-        <div className="mt-32 pt-20 border-t border-slate-200">
-          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-            {/* Image */}
-            <div className="w-full lg:w-1/2">
-              <div className="relative rounded-3xl overflow-hidden shadow-xl aspect-[4/3] lg:aspect-square">
-                <img 
-                  src="https://images.unsplash.com/photo-1542013936693-884638332954?q=80&w=1000&auto=format&fit=crop" 
-                  alt="Pure Membrane Water" 
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-blue-900/10 mix-blend-multiply"></div>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="w-full lg:w-1/2">
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">The Membrane Advantage</h2>
-              <p className="text-lg text-slate-600 mb-10 leading-relaxed">
-                Why rely on outdated methods? Our advanced membrane is built on modern material science, offering unparalleled protection and consistency.
-              </p>
-
-              <div className="space-y-8">
-                {[
-                  {
-                    title: "Absolute Precision",
-                    desc: "Our membrane pores are engineered to exacting microscopic standards, creating an impassable physical barrier for contaminants.",
-                  },
-                  {
-                    title: "Unmatched Consistency",
-                    desc: "Unlike standard filters that degrade quickly, our membrane delivers the exact same level of high-grade purity from the first drop to the last.",
-                  },
-                  {
-                    title: "100% Chemical-Free",
-                    desc: "A purely physical filtration process that relies entirely on advanced pressure and material science, ensuring no harmful additives touch your water.",
-                  }
-                ].map((item, idx) => (
-                  <div key={idx} className="flex gap-5">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm mt-1">
-                      {idx + 1}
-                    </div>
-                    <div>
-                      <h4 className="text-xl font-bold text-slate-900 mb-2">{item.title}</h4>
-                      <p className="text-slate-600 leading-relaxed">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+      </section>
+      <section className="tech-advantage" aria-labelledby="advantage-heading">
+        <div className="tech-container">
+          <div className="tech-section-heading"><div><span className="tech-eyebrow">THE MEMBRANE ADVANTAGE</span><h2 id="advantage-heading">Small pores.<br />A meaningful difference.</h2></div><p>Modern material science brings precision to everyday water care through a carefully engineered physical filtration process.</p></div>
+          <div className="tech-advantage-grid">
+            <figure className="tech-water-image"><img src="/our-story-kitchen.png" alt="A carafe and glasses of fresh water in a sunlit kitchen" loading="lazy" /><figcaption>Better water starts with better engineering.</figcaption></figure>
+            <div className="tech-benefit-list">{[
+              { title: 'Precision by design', desc: 'Microscopic membrane pores create a physical barrier that separates water from contaminants.' },
+              { title: 'Engineered for consistency', desc: 'A carefully controlled filtration process supports dependable performance with proper care and maintenance.' },
+              { title: 'Physical filtration', desc: 'Pressure and membrane materials work together to filter water without adding purification chemicals.' },
+            ].map((item, index) => <article key={item.title}><span>0{index + 1}</span><div><h3>{item.title}</h3><p>{item.desc}</p></div></article>)}</div>
           </div>
+          <div className="tech-next"><div><span className="tech-eyebrow">FROM SCIENCE TO YOUR HOME</span><h3>Find the right system for your everyday.</h3></div><Link to="/products" className="tech-primary">Explore our systems <ArrowRight size={17} /></Link></div>
         </div>
-
       </section>
     </div>
   );
