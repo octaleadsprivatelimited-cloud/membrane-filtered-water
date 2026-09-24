@@ -56,7 +56,8 @@ export default function CustomerDashboard() {
   }
 
   return (
-    <div className="commerce-page customer-dashboard-page">
+    <div className="customer-dashboard-wrapper" style={{ background: '#f8fafc', minHeight: '100vh', width: '100%', paddingTop: '130px', paddingBottom: '60px' }}>
+      <div className="commerce-page customer-dashboard-page" style={{ paddingTop: 0, background: 'transparent', minHeight: 'auto', margin: '0 auto' }}>
       <div className="customer-dashboard-grid">
         
         {/* Left Sidebar */}
@@ -166,6 +167,7 @@ export default function CustomerDashboard() {
           )}
         </main>
       </div>
+        </div>
     </div>
   );
 }

@@ -364,8 +364,8 @@
 
 /* --- New Customer Boxed Layout --- */
 .customer-dashboard-page {
-  padding-top: 40px !important;
-  background: #f4f6f8;
+  padding-top: 0 !important;
+  background: transparent;
   min-height: calc(100vh - 100px);
 }
 
