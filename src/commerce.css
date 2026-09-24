@@ -259,3 +259,47 @@
 .auth-divider span {
   padding: 0 12px;
 }
+
+/* --- Compact Auth UI --- */
+.commerce-auth {
+  max-width: 380px !important;
+  margin: 60px auto 60px !important;
+  padding: 32px 28px !important;
+}
+
+.commerce-auth h1 {
+  font-size: 26px !important;
+  margin-bottom: 8px !important;
+}
+
+.commerce-auth > p {
+  margin-bottom: 24px !important;
+}
+
+.auth-social {
+  margin-bottom: 16px !important;
+}
+
+.google-btn {
+  padding: 10px !important;
+  font-size: 14px !important;
+}
+
+.commerce-auth .commerce-form {
+  gap: 12px !important;
+}
+
+.commerce-auth .commerce-form input {
+  padding: 10px 14px !important;
+}
+
+.commerce-auth .store-pill {
+  padding: 12px !important;
+  font-size: 14px !important;
+  margin-top: 4px !important;
+}
+
+.commerce-auth .commerce-inline {
+  margin-top: 20px !important;
+  padding-top: 16px !important;
+}
