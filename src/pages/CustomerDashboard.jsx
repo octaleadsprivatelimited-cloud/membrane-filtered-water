@@ -65,11 +65,14 @@ export default function CustomerDashboard() {
           </Link>
         </div>
         
-        {menuItems.map(({name,icon:Icon,tab:t})=>
-          <button key={name} aria-pressed={tab===t} onClick={()=>{setTab(t);setNotice('');setError('');}}>
-            <Icon size={18} /> {name}
-          </button>
-        )}
+        <nav>
+          {menuItems.map(({name,icon:Icon,tab:t})=>
+            <button key={name} aria-pressed={tab===t} onClick={()=>{setTab(t);setNotice('');setError('');}}>
+              <Icon size={18} /> {name}
+            </button>
+          )}
+          
+        </nav>
         
         <button className="admin-logout-btn" onClick={async()=>{await logout();navigate('/login');}}>
           <LogOut size={16}/> Logout
