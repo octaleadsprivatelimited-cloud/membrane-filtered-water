@@ -17,7 +17,7 @@ return <div className="admin-shell">
     <div className="admin-sidebar-header">
       <div className="store-logo-icon"><Leaf size={20} /></div>
       <div>
-        <Link to="/" className="store-logo">Aqua Safe Water Technologies</Link>
+        <Link to="/" className="store-logo"><img src="/logo.jpg" alt="membraneIQ" style={{ height: "30px", objectFit: "contain" }} /></Link>
         <span>Admin Panel</span>
       </div>
     </div>
