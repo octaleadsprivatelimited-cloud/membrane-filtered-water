@@ -1,7 +1,19 @@
-let app;
-try {
-  app = (await import('../server/index.mjs')).default;
-} catch (e) {
-  app = (req, res) => res.status(500).json({ error: "Server Initialization Error", details: e.message, hint: "Check Vercel environment variables like FIREBASE_SERVICE_ACCOUNT" });
+import app from '../server/index.mjs';
+
+// If firebase is in an error state (e.g. bad FIREBASE_SERVICE_ACCOUNT),
+// inject a middleware to return that error instead of hitting routes.
+import { db } from '../server/firebase.mjs';
+
+export default function(req, res) {
+  try {
+    // Just touching db will throw if initialization failed
+    db.collection('test'); 
+    return app(req, res);
+  } catch (e) {
+    return res.status(500).json({ 
+      error: "Server Initialization Error", 
+      details: e.message, 
+      hint: "Make sure FIREBASE_SERVICE_ACCOUNT is set in Vercel properly." 
+    });
+  }
 }
-export default app;
