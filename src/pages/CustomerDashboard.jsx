@@ -75,7 +75,7 @@ export default function CustomerDashboard() {
             {menuItems.map(({name,icon:Icon,tab:t})=>
               <button 
                 key={name} 
-                className={\`customer-nav-item \${tab===t ? 'active' : ''}\`}
+                className={`customer-nav-item ${tab===t ? 'active' : ''}`}
                 onClick={()=>{
                   if (t === 'Cart') {
                     navigate('/cart');
