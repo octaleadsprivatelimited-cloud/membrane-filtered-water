@@ -79,7 +79,7 @@ export default function CustomerDashboard() {
                 className={`customer-nav-item ${tab===t ? 'active' : ''}`}
                 onClick={()=>{
                   if (t === 'Cart') {
-                    navigate('/cart');
+                    navigate('/bag');
                   } else {
                     setTab(t);setNotice('');setError('');
                   }
