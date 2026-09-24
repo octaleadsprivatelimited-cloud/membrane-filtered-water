@@ -61,7 +61,7 @@ export default function CustomerDashboard() {
         <div className="admin-sidebar-header">
           <Link to="/" className="store-logo-icon" style={{color: '#fff', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px'}}>
             <Droplets size={24} />
-            <span style={{fontWeight: 700, fontSize: '18px', letterSpacing: '-0.5px'}}>aquapure.</span>
+            <span style={{fontWeight: 700, fontSize: '18px', letterSpacing: '-0.5px'}}>Aqua Safe Water Technologies</span>
           </Link>
         </div>
         

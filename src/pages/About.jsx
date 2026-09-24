@@ -22,7 +22,7 @@ const About = () => {
           <div className="about-hero-copy">
             <span className="about-hero-eyebrow">THE PEOPLE. THE PURPOSE. THE PROMISE.</span>
             <h1 id="about-heading">Better water.<br />A purpose that<br /><em>runs deeper.</em></h1>
-            <p>We believe pure water belongs in every home. Discover the care and membrane technology behind AquaPure.</p>
+            <p>We believe pure water belongs in every home. Discover the care and membrane technology behind Aqua Safe Water Technologies</p>
           </div>
           <div className="about-hero-bottom">
             <Link to="/technology" className="about-tech-link">Built on membrane technology <ArrowUpRight size={18} /></Link>
@@ -43,7 +43,7 @@ const About = () => {
             <div className="company-showcase">
               <img src="/our-story-kitchen.png" alt="Fresh drinking water in a sunlit home kitchen" loading="lazy" />
             </div>
-            <div className="company-facts" aria-label="AquaPure at a glance">
+            <div className="company-facts" aria-label="Aqua Safe Water Technologies at a glance">
               <div className="company-stat"><strong>10k<span>+</span></strong><span>Homes purified</span></div>
               <div className="company-stat"><strong>5</strong><span>Years of research</span></div>
             </div>

@@ -17,7 +17,7 @@ return <div className="admin-shell">
     <div className="admin-sidebar-header">
       <div className="store-logo-icon"><Leaf size={20} /></div>
       <div>
-        <Link to="/" className="store-logo">aquapure.</Link>
+        <Link to="/" className="store-logo">Aqua Safe Water Technologies</Link>
         <span>Admin Panel</span>
       </div>
     </div>
@@ -30,7 +30,7 @@ return <div className="admin-shell">
         <div className="admin-avatar">A</div>
         <div className="admin-user-details">
           <strong>Aqua Admin</strong>
-          <span>{profile?.email || 'admin@aquapure.com'}</span>
+          <span>{profile?.email || 'admin@Aqua Safe Water Technologiescom'}</span>
         </div>
       </div>
       <button className="admin-logout-btn" onClick={async()=>{await logout();navigate('/admin');}}><LogOut size={16}/> Logout</button>
@@ -40,7 +40,7 @@ return <div className="admin-shell">
     <header className="commerce-heading">
       <div>
         <h1>{tab === 'Overview' ? 'Dashboard' : tab}</h1>
-        <span className="shop-kicker">{tab === 'Overview' ? 'Welcome to aquapure. Admin Panel' : `Manage your ${tab.toLowerCase()}`}</span>
+        <span className="shop-kicker">{tab === 'Overview' ? 'Welcome to Aqua Safe Water Technologies Admin Panel' : `Manage your ${tab.toLowerCase()}`}</span>
       </div>
       <div className="commerce-heading-actions">
         <button disabled={busy} onClick={()=>load().catch(e=>setError(e.message))}>Export Orders</button>

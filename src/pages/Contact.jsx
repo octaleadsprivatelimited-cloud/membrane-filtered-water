@@ -8,11 +8,11 @@ const Contact = () => {
   const service = params.get('service') || '';
   return (
     <div className="contact-page">
-      <section className="contact-hero"><div className="contact-container"><span className="contact-eyebrow">LET’S TALK WATER</span><div className="contact-hero-row"><h1>A question today.<br /><span>A clearer tomorrow.</span></h1><div><p>Choosing a purifier, planning a service, or just looking for advice? Start a conversation with AquaPure.</p><span className="contact-demo">Demo contact details · India</span></div></div></div></section>
+      <section className="contact-hero"><div className="contact-container"><span className="contact-eyebrow">LET’S TALK WATER</span><div className="contact-hero-row"><h1>A question today.<br /><span>A clearer tomorrow.</span></h1><div><p>Choosing a purifier, planning a service, or just looking for advice? Start a conversation with Aqua Safe Water Technologies</p><span className="contact-demo">Demo contact details · India</span></div></div></div></section>
       <section className="contact-cards-section" aria-label="Contact options"><div className="contact-container">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
           {[
-            { icon: Mail, title: 'Email us', value: 'care@aquapure.example', note: 'Product & service enquiries' },
+            { icon: Mail, title: 'Email us', value: 'care@Aqua Safe Water Technologiesexample', note: 'Product & service enquiries' },
             { icon: Phone, title: 'Call our team', value: '+91 00000 00000', note: 'Demo sales number' },
             { icon: MapPin, title: 'Visit us', value: 'Bengaluru, Karnataka', note: 'Demo city location' },
             { icon: Headphones, title: 'Service support', value: '+91 00000 00001', note: 'Demo support number' },

@@ -26,7 +26,7 @@ const Services = () => {
     <div className="services-page">
       <section className="services-hero">
         <div className="services-container services-hero-grid">
-          <div><span className="services-eyebrow">AQUAPURE CARE</span><h1>Expert care.<br /><span>For every drop.</span></h1><p>From the first installation to everyday maintenance, find the right support to keep your water system working at its best.</p><a href="#service-catalog" className="services-button">Explore services <ArrowRight size={17} /></a></div>
+          <div><span className="services-eyebrow">AQUA SAFE WATER TECHNOLOGIES CARE</span><h1>Expert care.<br /><span>For every drop.</span></h1><p>From the first installation to everyday maintenance, find the right support to keep your water system working at its best.</p><a href="#service-catalog" className="services-button">Explore services <ArrowRight size={17} /></a></div>
           <aside className="services-care"><Wrench size={30} strokeWidth={1.4} /><h2>Support through the life<br />of your system.</h2>{['Installation & setup', 'Routine maintenance', 'Troubleshooting & guidance'].map(item => <div key={item}><Check size={16} />{item}</div>)}<span>ONE PLACE FOR YOUR WATER CARE</span></aside>
         </div>
       </section>

@@ -43,7 +43,7 @@ const Technology = () => {
     <div className="technology-page">
       <section className="tech-hero" aria-labelledby="tech-heading">
         <div className="tech-container">
-          <div className="tech-hero-top"><span className="tech-eyebrow">THE SCIENCE BEHIND EVERY DROP</span><span className="tech-edition">AQUAPURE / TECHNOLOGY</span></div>
+          <div className="tech-hero-top"><span className="tech-eyebrow">THE SCIENCE BEHIND EVERY DROP</span><span className="tech-edition">AQUA SAFE WATER TECHNOLOGIES / TECHNOLOGY</span></div>
           <div className="tech-hero-grid">
             <div className="tech-hero-copy"><h1 id="tech-heading">{content.title}</h1><p>{content.content}</p><a className="tech-primary" href="#purification">See how it works <ArrowDown size={17} /></a></div>
             <figure className="tech-diagram"><img src="/membrane-tech.jpg" alt="Cutaway illustration showing membrane filtration layers" /><figcaption><span>ENGINEERED FOR PURITY</span><span>Membrane filtration</span></figcaption></figure>
