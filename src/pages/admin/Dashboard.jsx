@@ -15,7 +15,7 @@ const menuItems = [{name:'Dashboard',icon:LayoutDashboard,tab:'Overview'},{name:
 return <div className="admin-shell">
   <aside className="admin-sidebar">
     <div className="admin-sidebar-header">
-      <div className="store-logo-icon"><Leaf size={20} /></div>
+      
       <div>
         <Link to="/" className="store-logo"><img src="/logo.jpg" alt="membraneIQ" style={{ height: "30px", objectFit: "contain" }} /></Link>
         <span>Admin Panel</span>

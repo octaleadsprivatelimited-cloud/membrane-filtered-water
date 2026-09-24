@@ -60,7 +60,7 @@ export default function CustomerDashboard() {
       <aside className="admin-sidebar">
         <div className="admin-sidebar-header">
           <Link to="/" className="store-logo-icon" style={{color: '#fff', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px'}}>
-            <Droplets size={24} />
+            
             <img src="/logo.jpg" alt="membraneIQ" style={{ height: "30px", objectFit: "contain" }} />
           </Link>
         </div>
