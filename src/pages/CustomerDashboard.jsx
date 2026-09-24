@@ -4,12 +4,12 @@ import {useAuth} from '../commerce/Auth';
 import {api} from '../commerce/api';
 import Orders from '../commerce/Orders';
 import AddressFields from '../commerce/AddressFields';
-import {LayoutDashboard, ShoppingCart, MapPin, UserRound, LogOut, Droplets} from 'lucide-react';
+import {Package, ShoppingCart, MapPin, UserRound, LogOut} from 'lucide-react';
 
 const menuItems = [
-  {name: 'Overview', icon: LayoutDashboard, tab: 'Overview'},
-  {name: 'My Orders', icon: ShoppingCart, tab: 'Orders'},
-  {name: 'Saved Addresses', icon: MapPin, tab: 'Addresses'},
+  {name: 'My Orders', icon: Package, tab: 'Orders'},
+  {name: 'My Cart', icon: ShoppingCart, tab: 'Cart'},
+  {name: 'Addresses', icon: MapPin, tab: 'Addresses'},
   {name: 'Profile', icon: UserRound, tab: 'Profile'}
 ];
 
@@ -17,7 +17,7 @@ export default function CustomerDashboard() {
   const {user,ready,profile,error:authError,refresh,logout}=useAuth();
   const navigate=useNavigate();
   const [orders,setOrders]=useState([]);
-  const [tab,setTab]=useState('Overview');
+  const [tab,setTab]=useState('Orders');
   const [error,setError]=useState('');
   const [notice,setNotice]=useState('');
   const [address,setAddress]=useState({});
@@ -56,117 +56,116 @@ export default function CustomerDashboard() {
   }
 
   return (
-    <div className="admin-shell">
-      <aside className="admin-sidebar">
-        <div className="admin-sidebar-header">
-          <Link to="/" className="store-logo-icon" style={{color: '#fff', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px'}}>
-            
-            <img src="/logo.jpg" alt="membraneIQ" style={{ height: "30px", objectFit: "contain" }} />
-          </Link>
-        </div>
+    <div className="commerce-page customer-dashboard-page">
+      <div className="customer-dashboard-grid">
         
-        <nav>
-          {menuItems.map(({name,icon:Icon,tab:t})=>
-            <button key={name} aria-pressed={tab===t} onClick={()=>{setTab(t);setNotice('');setError('');}}>
-              <Icon size={18} /> {name}
-            </button>
-          )}
-          
-        </nav>
-        
-        <button className="admin-logout-btn" onClick={async()=>{await logout();navigate('/login');}}>
-          <LogOut size={16}/> Logout
-        </button>
-      </aside>
-      
-      <main className="admin-main">
-        <header className="admin-topbar">
-          <div>
-            <h1>Customer Portal</h1>
-            <p>Welcome back, {profile.name || 'valued customer'}</p>
-          </div>
-          <Link to="/products" className="store-pill" style={{textDecoration: 'none'}}>Continue Shopping</Link>
-        </header>
-
-        <div className="admin-content">
-          {error && <p role="alert" className="commerce-error" style={{marginBottom: '20px'}}>{error}</p>}
-          {notice && <p role="status" style={{color: 'green', marginBottom: '20px', fontWeight: 600}}>{notice}</p>}
-
-          {tab === 'Overview' && (
-            <div className="commerce-panel">
-              <h2>Account Overview</h2>
-              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '20px'}}>
-                <div style={{padding: '20px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0'}}>
-                  <h3>Total Orders</h3>
-                  <p style={{fontSize: '32px', fontWeight: 'bold', color: '#0f172a', margin: '10px 0'}}>{orders.length}</p>
-                  <button onClick={() => setTab('Orders')} style={{color: '#2563eb', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline'}}>View all orders</button>
-                </div>
-                <div style={{padding: '20px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0'}}>
-                  <h3>Saved Addresses</h3>
-                  <p style={{fontSize: '32px', fontWeight: 'bold', color: '#0f172a', margin: '10px 0'}}>{profile.addresses.length}</p>
-                  <button onClick={() => setTab('Addresses')} style={{color: '#2563eb', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline'}}>Manage addresses</button>
-                </div>
-              </div>
+        {/* Left Sidebar */}
+        <aside className="customer-sidebar">
+          <div className="customer-profile-block">
+            <div className="customer-avatar">
+              {profile.name ? profile.name[0].toUpperCase() : (user.email ? user.email[0].toUpperCase() : 'U')}
             </div>
-          )}
+            <div className="customer-info">
+              <strong>{profile.name || 'User'}</strong>
+              <span>{user.email}</span>
+            </div>
+          </div>
+
+          <nav className="customer-nav">
+            {menuItems.map(({name,icon:Icon,tab:t})=>
+              <button 
+                key={name} 
+                className={\`customer-nav-item \${tab===t ? 'active' : ''}\`}
+                onClick={()=>{
+                  if (t === 'Cart') {
+                    navigate('/cart');
+                  } else {
+                    setTab(t);setNotice('');setError('');
+                  }
+                }}>
+                <Icon size={18} /> {name}
+              </button>
+            )}
+          </nav>
+
+          <div className="customer-logout-wrap">
+            <button className="customer-nav-item" onClick={async()=>{await logout();navigate('/login');}}>
+              <LogOut size={18}/> Logout
+            </button>
+          </div>
+        </aside>
+        
+        {/* Main Content */}
+        <main className="customer-main">
+          {error && <p role="alert" className="commerce-error" style={{marginBottom: '20px'}}>{error}</p>}
+          {notice && <p role="status" className="commerce-notice" style={{color: '#ea580c', marginBottom: '20px', fontWeight: 600}}>{notice}</p>}
 
           {tab === 'Orders' && (
-            <div className="commerce-panel">
-              <h2>Order History</h2>
+            <div className="customer-panel">
+              <header className="customer-panel-header">
+                <h2>My Orders</h2>
+                <p>Track and manage your orders</p>
+              </header>
               <Orders orders={orders} reload={load}/>
             </div>
           )}
 
           {tab === 'Addresses' && (
-            <div className="commerce-panel">
-              <h2>Manage Delivery Addresses</h2>
-              <div className="commerce-addresses" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px'}}>
+            <div className="customer-panel">
+              <header className="customer-panel-header">
+                <h2>Manage Delivery Addresses</h2>
+                <p>Add or remove saved locations</p>
+              </header>
+              <div className="commerce-addresses" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px'}}>
                 {profile.addresses.map((a,i)=>(
-                  <article key={i} style={{padding: '15px', border: '1px solid #e2e8f0', borderRadius: '8px'}}>
-                    <strong>{a.name}</strong>
-                    <p style={{margin: '10px 0', color: '#475569', lineHeight: 1.5}}>
+                  <article key={i} style={{padding: '20px', border: '1px solid #e2e8f0', borderRadius: '12px', background: '#fff'}}>
+                    <strong style={{fontSize: '15px'}}>{a.name}</strong>
+                    <p style={{margin: '12px 0', color: '#64748b', lineHeight: 1.5, fontSize: '14px'}}>
                       {a.line1}<br/>{a.city}, {a.state} {a.pincode}<br/>{a.phone}
                     </p>
                     <button 
-                      style={{background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer'}}
+                      style={{background: 'transparent', color: '#ea580c', border: '1px solid #ea580c', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 500}}
                       onClick={async()=>{
                         try{
                           await api('/me',{method:'PUT',body:JSON.stringify({name:profile.name,addresses:profile.addresses.filter((_,n)=>n!==i)})});
                           await refresh();
                         }catch(e){setError(e.message);}
-                      }}>Remove Address</button>
+                      }}>Remove</button>
                   </article>
                 ))}
               </div>
               
               {profile.addresses.length < 5 && (
-                <form className="commerce-form" onSubmit={saveAddress} style={{maxWidth: '500px'}}>
-                  <h3>Add a New Address</h3>
+                <form className="commerce-form" onSubmit={saveAddress} style={{maxWidth: '500px', background: '#f8fafc', padding: '24px', borderRadius: '12px'}}>
+                  <h3 style={{marginBottom: '16px'}}>Add a New Address</h3>
                   <AddressFields value={address} onChange={setAddress}/>
-                  <button className="store-pill" disabled={busy} style={{marginTop: '15px'}}>{busy ? 'Saving...' : 'Save Address'}</button>
+                  <button className="store-pill" disabled={busy} style={{marginTop: '15px', background: '#ea580c', color: 'white'}}>{busy ? 'Saving...' : 'Save Address'}</button>
                 </form>
               )}
             </div>
           )}
 
           {tab === 'Profile' && (
-             <div className="commerce-panel" style={{maxWidth: '400px'}}>
-               <h2>Profile Details</h2>
-               <form className="commerce-form" onSubmit={saveProfile}>
+             <div className="customer-panel">
+               <header className="customer-panel-header">
+                 <h2>Profile Details</h2>
+                 <p>Update your personal information</p>
+               </header>
+               <form className="commerce-form" onSubmit={saveProfile} style={{maxWidth: '400px'}}>
                  <label>
                    Full Name
                    <input name="name" required defaultValue={profile.name}/>
                  </label>
                  <label>
                    Email Address
-                   <input type="email" disabled value={user.email} style={{background: '#f1f5f9', cursor: 'not-allowed'}} />
+                   <input type="email" disabled value={user.email} style={{background: '#f1f5f9', cursor: 'not-allowed', color: '#94a3b8'}} />
                  </label>
-                 <button className="store-pill" disabled={busy} style={{marginTop: '15px'}}>{busy ? 'Updating...' : 'Update Profile'}</button>
+                 <button className="store-pill" disabled={busy} style={{marginTop: '15px', background: '#ea580c', color: 'white'}}>{busy ? 'Updating...' : 'Update Profile'}</button>
                </form>
              </div>
           )}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
