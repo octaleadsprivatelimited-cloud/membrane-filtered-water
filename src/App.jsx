@@ -35,7 +35,7 @@ function ScrollToTop() {
 
 function MainLayout({ children }) {
   const { pathname } = useLocation();
-  const isAdminRoute = pathname.startsWith('/admin') || pathname === '/account';
+  const isAdminRoute = pathname.startsWith('/admin');
 
   if (isAdminRoute) {
     return <main className="min-h-screen bg-slate-50">{children}</main>;
