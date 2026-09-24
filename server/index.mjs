@@ -116,4 +116,4 @@ app.use('/api',(req,res)=>res.status(404).json({error:'Endpoint not found'}));
 app.use(express.static(resolve('dist')));
 app.get('/{*path}',(req,res)=>res.sendFile(resolve('dist/index.html')));
 app.use((err,req,res,_next)=>{console.error(err.message);res.status(err.status||500).json({error:err.status?err.message:'Something went wrong. Please retry.'});});
-const port=Number(process.env.PORT||8787);app.listen(port,emulator?'127.0.0.1':'0.0.0.0',()=>console.log(`Store API on ${port}; Firebase ${emulator?'EMULATOR':'LIVE'}; Cashfree ${paymentMode()}`));
+export default app; if(process.env.NODE_ENV !== 'production' || process.env.RUN_SERVER) { const port=Number(process.env.PORT||8787);app.listen(port,emulator?'127.0.0.1':'0.0.0.0',()=>console.log(`Store API on ${port}; Firebase ${emulator?'EMULATOR':'LIVE'}; Cashfree ${paymentMode()}`)); }
