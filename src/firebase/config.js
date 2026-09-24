@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getAnalytics } from 'firebase/analytics';
 
-const useEmulator = import.meta.env.VITE_USE_FIREBASE_EMULATORS !== 'false';
+const useEmulator = import.meta.env.VITE_USE_FIREBASE_EMULATORS === 'true';
 const app = initializeApp({
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'demo-key',
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'demo-aquapure-store',
