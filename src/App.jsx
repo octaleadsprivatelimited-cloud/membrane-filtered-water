@@ -6,7 +6,7 @@ import { ShopProvider } from './store/Shop';
 import Bag from './pages/Bag';
 import { AuthProvider } from './commerce/Auth';
 import SignIn from './commerce/SignIn';
-import Account from './pages/Account';
+import CustomerDashboard from './pages/CustomerDashboard';
 import Checkout from './pages/Checkout';
 import Policy from './pages/Policy';
 import { MotionConfig } from 'framer-motion';
@@ -35,7 +35,7 @@ function ScrollToTop() {
 
 function MainLayout({ children }) {
   const { pathname } = useLocation();
-  const isAdminRoute = pathname.startsWith('/admin');
+  const isAdminRoute = pathname.startsWith('/admin') || pathname === '/account';
 
   if (isAdminRoute) {
     return <main className="min-h-screen bg-slate-50">{children}</main>;
@@ -59,7 +59,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/login" element={<SignIn />} />
-          <Route path="/account" element={<Account />} />
+          <Route path="/account" element={<CustomerDashboard />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/policies/:kind" element={<Policy />} />
           <Route path="/bag" element={<Bag />} />
