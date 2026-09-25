@@ -62,3 +62,11 @@ Run `npm run test:commerce` while the emulators and API are running. Tests creat
 The current demo still has sample marketing/contact content and placeholder policy text until filled in settings. Review these before launch. Tax invoicing, carrier API integration, transactional notification emails, image uploads (URLs are supported), automatic payment expiry/refunds, and deployment are not included in this local implementation.
 
 Dependency audit currently reports two moderate transitive findings (`gaxios` / `uuid`) in the Firebase Admin dependency tree; `npm audit fix` did not resolve them. Revisit with upstream updates before production. Build succeeds with a bundle-size warning; lint exits successfully with React advisory warnings.
+
+## Production login troubleshooting (membraneIQ)
+
+Production defaults to Firebase project `membrane-7677f`. Set `FIREBASE_SERVICE_ACCOUNT` to the full service-account JSON in **Vercel → Settings → Environment Variables → Production** and set `FIREBASE_PROJECT_ID=membrane-7677f`. The account must belong to that same project. Never put the private key in a `VITE_` variable. Redeploy after changing server variables. Set `PUBLIC_STORE_URL=https://www.membraneiq.com` for payments and callbacks. Enable the desired Email/Password and Google providers and authorize the custom domain in Firebase Authentication.
+
+`/api/config` should return JSON with status 200; `/api/me` without a token should return JSON with status 401. A plain-text `FUNCTION_INVOCATION_FAILED` response means the Vercel function crashed, not that the customer's password was rejected. Read the first exception in the deployment's **Logs**. The entrypoint catches module startup failures, explicitly includes `server/**`, and returns JSON for handled configuration failures. Token verification failures caused by backend credentials return 503, not a misleading 401.
+
+For local tests only: run `npm run emulators`, `STORE_MODE=emulator npm run api`, and `VITE_USE_FIREBASE_EMULATORS=true npm run dev`. Run `STORE_MODE=emulator npm run test:commerce` and `node --test tests/api-response.test.mjs tests/server-startup.test.mjs`. Production remains on live Firebase unless emulator mode is explicitly selected.

@@ -1,19 +1,13 @@
-import app from '../server/index.mjs';
-
-// If firebase is in an error state (e.g. bad FIREBASE_SERVICE_ACCOUNT),
-// inject a middleware to return that error instead of hitting routes.
-import { db } from '../server/firebase.mjs';
-
-export default function(req, res) {
-  try {
-    // Just touching db will throw if initialization failed
-    db.collection('test'); 
-    return app(req, res);
-  } catch (e) {
-    return res.status(500).json({ 
-      error: "Server Initialization Error", 
-      details: e.message, 
-      hint: "Make sure FIREBASE_SERVICE_ACCOUNT is set in Vercel properly." 
-    });
-  }
+// A literal import keeps the server in Vercel's dependency trace while allowing
+// initialization failures to produce JSON instead of a platform error page.
+let appPromise;
+export default async function handler(req,res){
+ try {
+  appPromise ||= import('../server/index.mjs').then(module=>module.default).catch(error=>{appPromise=null;throw error;});
+  const app=await appPromise;
+  return app(req,res);
+ }catch(error){
+  console.error('Store API startup failed:',error.message);
+  return res.status(503).json({error:'Store services are temporarily unavailable. Please try again shortly.',code:'STORE_STARTUP'});
+ }
 }

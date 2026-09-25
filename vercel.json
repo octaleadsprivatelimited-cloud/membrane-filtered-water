@@ -8,5 +8,11 @@
       "source": "/(.*)",
       "destination": "/"
     }
-  ]
+  ],
+  "functions": {
+    "api/index.mjs": {
+      "includeFiles": "server/**",
+      "maxDuration": 30
+    }
+  }
 }

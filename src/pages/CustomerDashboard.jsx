@@ -30,8 +30,8 @@ export default function CustomerDashboard() {
     if(user)load().catch(e=>setError(e.message));
   },[user,ready,navigate]);
   
-  if(authError) return <div className="commerce-page" role="alert">{authError} <button onClick={()=>window.location.reload()}>Retry</button></div>;
-  if(!user||!profile) return null;
+  if(authError) return <div className="commerce-page" role="alert">{authError} <button onClick={()=>refresh().catch(()=>{})}>Retry</button> <button onClick={logout}>Sign out</button></div>;
+  if(!user||!profile) return <div className="commerce-page" role="status">Loading your account…</div>;
   
   async function saveAddress(e){
     e.preventDefault();

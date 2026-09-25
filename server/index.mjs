@@ -2,11 +2,13 @@ import express from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { randomUUID, createHash } from 'node:crypto';
 import { resolve } from 'node:path';
-import { auth, db, emulator } from './firebase.mjs';
+import { pathToFileURL } from 'node:url';
+import { auth, db, emulator, assertFirebaseReady } from './firebase.mjs';
 import { merchantFeed, merchantIssues, publicHttps, validGtin } from './merchant.mjs';
 import { cashfree, cashfreeReady, paymentMode, verifyWebhook } from './cashfree.mjs';
 const app=express();
 app.disable('x-powered-by');
+app.use('/api',(req,res,next)=>{try{assertFirebaseReady();next();}catch(error){next(error);}});
 const fail=(message,status=400)=>{const e=new Error(message);e.status=status;throw e;};
 const text=(v,max=200)=>typeof v==='string'?v.trim().slice(0,max):'';
 const id=v=>/^[\w-]{1,100}$/.test(v||'')?v:fail('Invalid identifier');
@@ -14,8 +16,8 @@ const settingsDefault={siteUrl:'',shippingFee:0,freeShippingAbove:0,supportEmail
 const getSettings=async()=>({...settingsDefault,...(await db.doc('settings/store').get()).data()});
 const all=async(collection)=>(await db.collection(collection).get()).docs.map(d=>({...d.data(),id:d.id}));
 const int=(v,min=0,max=1000000)=>Number.isInteger(Number(v))&&Number(v)>=min&&Number(v)<=max?Number(v):fail('Invalid quantity');
-async function authenticated(req,res,next){try{const token=(req.headers.authorization||'').replace(/^Bearer /,'');if(!token)fail('Please sign in',401);req.user=await auth.verifyIdToken(token,true);next();}catch{res.status(401).json({error:'Please sign in again.'});}}
-const admin=(req,res,next)=>(req.user.admin===true || req.user.email === 'aquasafe.ap@gmail.com')?next():res.status(403).json({error:'Administrator access required.'});
+async function authenticated(req,res,next){try{const token=(req.headers.authorization||'').replace(/^Bearer /,'');if(!token)fail('Please sign in',401);req.user=await auth.verifyIdToken(token,true);next();}catch(error){if(error.status===401||['auth/argument-error','auth/id-token-expired','auth/id-token-revoked','auth/invalid-id-token','auth/user-disabled','auth/user-not-found'].includes(error.code))return res.status(401).json({error:'Please sign in again.'});console.error('Token verification unavailable:',error.code||error.message);res.status(503).json({error:'Account verification is temporarily unavailable. Please try again shortly.'});}}
+const admin=(req,res,next)=>(req.user.admin===true || (req.user.email_verified===true&&req.user.email === 'aquasafe.ap@gmail.com'))?next():res.status(403).json({error:'Administrator access required.'});
 function address(v){if(!v||typeof v!=='object')fail('Address required');const a={name:text(v.name,100),phone:text(v.phone,20),line1:text(v.line1,200),city:text(v.city,80),state:text(v.state,80),pincode:text(v.pincode,6)};if(Object.values(a).some(x=>!x)||!/^\d{6}$/.test(a.pincode)||!/^\+?[\d\s-]{10,16}$/.test(a.phone))fail('Complete a valid Indian address and phone number.');return a;}
 function product(v,existing={}){
  const p={...existing,name:text(v.name,150),sku:text(v.sku,50)||`SKU-${Date.now()}`,category:text(v.category,100),description:text(v.description,5000),price:Number(v.price),originalPrice:Number(v.originalPrice||v.price),gst:Number(v.gst)||0,stock:int(v.stock),image:text(v.image,2000000),images:Array.isArray(v.images)?v.images.map(x=>text(x,2000000)).filter(Boolean).slice(0,10):[],brand:text(v.brand,100),gtin:text(v.gtin,14),mpn:text(v.mpn,100),features:Array.isArray(v.features)?v.features.map(x=>text(x,200)).filter(Boolean).slice(0,12):[],status:['draft','active','archived'].includes(v.status)?v.status:'draft',condition:['new','used','refurbished'].includes(v.condition)?v.condition:'new',identifiersExist:v.identifiersExist!==false,merchantEnabled:v.merchantEnabled===true,demo:v.demo===true,updatedAt:new Date().toISOString()};
@@ -35,11 +37,11 @@ async function settlePayment(orderId) {
 app.post('/api/payments/cashfree/webhook',express.raw({type:'application/json',limit:'128kb'}),async(req,res,next)=>{try{if(!verifyWebhook(req.body,req.headers['x-webhook-timestamp'],req.headers['x-webhook-signature']))fail('Invalid webhook signature',401);const payload=JSON.parse(req.body.toString());const orderId=payload.data?.order?.order_id;if(orderId)await settlePayment(orderId);res.json({received:true});}catch(e){next(e);}});
 app.use('/api',rateLimit({windowMs:60_000,limit:emulator?1000:180,standardHeaders:'draft-8',legacyHeaders:false,message:{error:'Too many requests. Please try again shortly.'}}));
 app.use(express.json({limit:'256kb'}));
-app.use((req,res,next)=>{res.set('X-Content-Type-Options','nosniff');if(req.path.startsWith('/api/'))res.set('Cache-Control','no-store');if(!['GET','HEAD','OPTIONS'].includes(req.method)&&req.headers.origin){const allowed=[process.env.PUBLIC_STORE_URL, 'http://127.0.0.1:5173', 'http://localhost:5173'].filter(Boolean);if(!allowed.includes(req.headers.origin))return res.status(403).json({error:'Origin not allowed'});}next();});
+app.use((req,res,next)=>{res.set('X-Content-Type-Options','nosniff');if(req.path.startsWith('/api/'))res.set('Cache-Control','no-store');if(!['GET','HEAD','OPTIONS'].includes(req.method)&&req.headers.origin){const sameOrigin=req.headers.origin===`${emulator?'http':'https'}://${req.headers.host}`;const allowed=[process.env.PUBLIC_STORE_URL?.replace(/\/$/,''), ...(process.env.VERCEL_URL?[`https://${process.env.VERCEL_URL}`]:[]), ...(process.env.VERCEL_PROJECT_PRODUCTION_URL?[`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]:[]), ...(process.env.VERCEL?[]:['http://127.0.0.1:5173','http://localhost:5173'])].filter(Boolean);if(!sameOrigin&&!allowed.includes(req.headers.origin))return res.status(403).json({error:'Origin not allowed'});}next();});
 app.get('/api/config',async(req,res)=>res.json({emulator,paymentMode:cashfreeReady()?paymentMode():'disabled',...await getSettings()}));
 app.get('/api/products',async(req,res)=>res.json((await all('products')).filter(p=>p.status==='active')));
 app.get('/api/products/:id',async(req,res)=>{const s=await db.doc(`products/${id(req.params.id)}`).get();if(!s.exists||s.data().status!=='active')fail('Product not found',404);res.json({...s.data(),id:s.id});});
-app.get('/api/me',authenticated,async(req,res)=>{const ref=db.doc(`customers/${req.user.uid}`);const snap=await ref.get();if(!snap.exists)await ref.set({email:req.user.email||'',name:req.user.name||'',addresses:[],createdAt:new Date().toISOString()});res.json({...(await ref.get()).data(),uid:req.user.uid,admin:req.user.admin===true || req.user.email === 'aquasafe.ap@gmail.com'});});
+app.get('/api/me',authenticated,async(req,res)=>{const ref=db.doc(`customers/${req.user.uid}`);const data=await db.runTransaction(async tx=>{const snap=await tx.get(ref);if(snap.exists)return snap.data();const created={email:req.user.email||'',name:req.user.name||'',addresses:[],createdAt:new Date().toISOString()};tx.create(ref,created);return created;});res.json({...data,addresses:Array.isArray(data.addresses)?data.addresses:[],uid:req.user.uid,admin:req.user.admin===true || (req.user.email_verified===true&&req.user.email === 'aquasafe.ap@gmail.com')});});
 app.put('/api/me',authenticated,async(req,res)=>{const updates={name:text(req.body.name,100),addresses:(Array.isArray(req.body.addresses)?req.body.addresses:[]).slice(0,5).map(address)};await db.doc(`customers/${req.user.uid}`).set(updates,{merge:true});res.json(updates);});
 app.get('/api/orders',authenticated,async(req,res)=>{const snaps=await db.collection('orders').where('uid','==',req.user.uid).get();res.json(snaps.docs.map(d=>d.data()).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)));});
 app.post('/api/orders',authenticated,async(req,res)=>{
@@ -100,7 +102,7 @@ app.post('/api/admin/orders/manual',async(req,res)=>{
  res.status(201).json(order);
 });
 app.get('/api/admin/orders',async(req,res)=>res.json((await all('orders')).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))));
-app.patch('/api/admin/orders/:id',async(req,res)=>{const ref=db.doc(`orders/${id(req.params.id)}`);const next=req.body.status;await db.runTransaction(async tx=>{const s=await tx.get(ref);if(!s.exists)fail('Order not found',404); tx.update(ref,{status:text(next,50),tracking:text(req.body.tracking,200),updatedAt:new Date().toISOString()});});res.json({ok:true});});
+app.patch('/api/admin/orders/:id',async(req,res)=>{const ref=db.doc(`orders/${id(req.params.id)}`);const next=req.body.status;await db.runTransaction(async tx=>{const s=await tx.get(ref);if(!s.exists)fail('Order not found',404);const current=s.data().status;const transitions={confirmed:['processing'],processing:['shipped'],shipped:['delivered']};if(next!==current&&!transitions[current]?.includes(next))fail('Invalid order status transition',409); tx.update(ref,{status:text(next,50),tracking:text(req.body.tracking,200),updatedAt:new Date().toISOString()});});res.json({ok:true});});
 app.get('/api/admin/customers',async(req,res)=>res.json(await all('customers')));
 app.put('/api/admin/settings',async(req,res)=>{const b=req.body;const siteUrl=text(b.siteUrl,500).replace(/\/$/,'');if(siteUrl&&!publicHttps(siteUrl))fail('Use a public HTTPS domain');
 const s={siteUrl,shippingFee:Number(b.shippingFee),freeShippingAbove:Number(b.freeShippingAbove),supportEmail:text(b.supportEmail,200),businessName:text(b.businessName,150),merchantLive:b.merchantLive===true,
@@ -116,4 +118,4 @@ app.use('/api',(req,res)=>res.status(404).json({error:'Endpoint not found'}));
 app.use(express.static(resolve('dist')));
 app.get('/{*path}',(req,res)=>res.sendFile(resolve('dist/index.html')));
 app.use((err,req,res,_next)=>{console.error(err.message);res.status(err.status||500).json({error:err.status?err.message:'Something went wrong. Please retry.'});});
-export default app; if(process.env.NODE_ENV !== 'production' || process.env.RUN_SERVER) { const port=Number(process.env.PORT||8787);app.listen(port,emulator?'127.0.0.1':'0.0.0.0',()=>console.log(`Store API on ${port}; Firebase ${emulator?'EMULATOR':'LIVE'}; Cashfree ${paymentMode()}`)); }
+export default app; if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).href) { const port=Number(process.env.PORT||8787);app.listen(port,emulator?'127.0.0.1':'0.0.0.0',()=>console.log(`Store API on ${port}; Firebase ${emulator?'EMULATOR':'LIVE'}; Cashfree ${paymentMode()}`)); }

@@ -36,16 +36,10 @@ export default function SignIn({ admin = false }) {
       const provider = new GoogleAuthProvider();
       const cred = await signInWithPopup(auth, provider);
       
-      try {
-        const existing = await api('/me');
-        if (!existing || !existing.name) {
-          await api('/me', { method: 'PUT', body: JSON.stringify({ name: cred.user.displayName || 'Customer', addresses: existing?.addresses || [] }) });
-        }
-      } catch (e) {
-        // me endpoint creates a user doc if not exists, but we update the name just in case
-        await api('/me', { method: 'PUT', body: JSON.stringify({ name: cred.user.displayName || 'Customer', addresses: [] }) });
+      const existing = await api('/me');
+      if (!existing.name && cred.user.displayName) {
+        await api('/me', {method:'PUT',body:JSON.stringify({name:cred.user.displayName,addresses:existing.addresses||[]})});
       }
-      
       await refresh();
       routeUser(cred.user.email);
     } catch (err) {
@@ -80,6 +74,7 @@ export default function SignIn({ admin = false }) {
         cred = await signInWithEmailAndPassword(auth, f.get('email'), f.get('password'));
       }
       
+      await refresh();
       routeUser(cred.user.email);
     } catch (err) {
       const credentialsError = ['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(err.code);
