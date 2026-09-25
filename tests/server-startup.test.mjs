@@ -8,3 +8,7 @@ for (const [name,account] of [['missing credentials',''],['malformed credentials
   const result=JSON.parse(output.trim());assert.equal(result.status,503);assert.match(result.body.error,/not configured/);
  });
 }
+test('Firebase Admin imports with CommonJS-to-ESM require disabled (Vercel regression)',()=>{
+ const output=execFileSync(process.execPath,['--no-experimental-require-module','--input-type=module','-e',"await import('firebase-admin/auth');console.log('ok')"],{encoding:'utf8',timeout:10000});
+ assert.equal(output.trim(),'ok');
+});
