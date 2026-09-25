@@ -29,7 +29,7 @@ The seed script saves generated local administrator credentials in `.local/admin
 ## Connect your Firebase project
 
 1. Create a Firebase web app, enable Email/Password Authentication, create Firestore, and add your actual store domain to Authentication's authorized domains.
-2. Copy `.env.example` to `.env`. Set `STORE_MODE=live`, `FIREBASE_PROJECT_ID`, `VITE_USE_FIREBASE_EMULATORS=false`, and the `VITE_FIREBASE_*` web-app settings from Firebase. Browser Firebase config is public configuration; service-account keys are not.
+2. Public Firebase web-app settings and domain defaults live in `src/config/appConfig.js`. No frontend environment variables are required. See `CONFIGURATION.md` for the current deployment setup.
 3. Use a managed service identity/Application Default Credentials on the API host. For local live development, point `GOOGLE_APPLICATION_CREDENTIALS` at a private service-account file outside the repo. Never put server credentials into `VITE_*` variables, source control, or chat.
 4. Deploy rules with `firebase deploy --only firestore:rules --project YOUR_PROJECT_ID`. These rules deny direct client access; the authenticated API uses the Admin SDK.
 5. Register your administrator through the store, then run `npm run grant-admin -- your-admin-email` in the trusted server environment. Sign out and in to refresh the role. Do not run the demo seed script against production.
@@ -69,6 +69,6 @@ Production defaults to Firebase project `membrane-7677f`. Set `FIREBASE_SERVICE_
 
 `/api/config` should return JSON with status 200; `/api/me` without a token should return JSON with status 401. A plain-text `FUNCTION_INVOCATION_FAILED` response means the Vercel function crashed, not that the customer's password was rejected. Read the first exception in the deployment's **Logs**. The entrypoint catches module startup failures, explicitly includes `server/**`, and returns JSON for handled configuration failures. Token verification failures caused by backend credentials return 503, not a misleading 401.
 
-For local tests only: run `npm run emulators`, `STORE_MODE=emulator npm run api`, and `VITE_USE_FIREBASE_EMULATORS=true npm run dev`. Run `STORE_MODE=emulator npm run test:commerce` and `node --test tests/api-response.test.mjs tests/server-startup.test.mjs`. Production remains on live Firebase unless emulator mode is explicitly selected.
+For local tests only: run `npm run emulators`, `STORE_MODE=emulator npm run api`, and `npm run dev`. Run `STORE_MODE=emulator npm run test:commerce` and `node --test tests/api-response.test.mjs tests/server-startup.test.mjs`. Vercel uses live Firebase; local development defaults to emulators.
 
 The September 2026 Vercel crash was `ERR_REQUIRE_ESM` from `jwks-rsa@4` requiring ESM-only `jose@6`. Firebase Admin is pinned to `13.10.0`, whose JWKS dependency supports CommonJS without `require(esm)`, and the deployment explicitly selects Node 24. The startup regression test runs with `--no-experimental-require-module` to reproduce the host restriction. Re-test this path before upgrading Firebase Admin to version 14+.

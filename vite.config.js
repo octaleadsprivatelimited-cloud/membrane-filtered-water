@@ -1,8 +1,9 @@
+import appConfig from './src/config/appConfig.js';
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  server: { proxy: { '/api': 'http://127.0.0.1:8787' } },
+  server: { proxy: { [appConfig.apiBaseUrl]: appConfig.local.apiTarget } },
 })

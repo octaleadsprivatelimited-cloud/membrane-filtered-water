@@ -1,3 +1,4 @@
+import appConfig from '../src/config/appConfig.js';
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { randomUUID, createHash } from 'node:crypto';
@@ -12,7 +13,7 @@ app.use('/api',(req,res,next)=>{try{assertFirebaseReady();next();}catch(error){n
 const fail=(message,status=400)=>{const e=new Error(message);e.status=status;throw e;};
 const text=(v,max=200)=>typeof v==='string'?v.trim().slice(0,max):'';
 const id=v=>/^[\w-]{1,100}$/.test(v||'')?v:fail('Invalid identifier');
-const settingsDefault={siteUrl:'',shippingFee:0,freeShippingAbove:0,supportEmail:'',businessName:'AquaPure',shippingPolicy:'',returnsPolicy:'',privacyPolicy:'',termsPolicy:'',merchantLive:false};
+const settingsDefault={siteUrl:appConfig.frontendUrl,shippingFee:0,freeShippingAbove:0,supportEmail:'',businessName:'AquaPure',shippingPolicy:'',returnsPolicy:'',privacyPolicy:'',termsPolicy:'',merchantLive:false};
 const getSettings=async()=>({...settingsDefault,...(await db.doc('settings/store').get()).data()});
 const all=async(collection)=>(await db.collection(collection).get()).docs.map(d=>({...d.data(),id:d.id}));
 const int=(v,min=0,max=1000000)=>Number.isInteger(Number(v))&&Number(v)>=min&&Number(v)<=max?Number(v):fail('Invalid quantity');
@@ -37,7 +38,7 @@ async function settlePayment(orderId) {
 app.post('/api/payments/cashfree/webhook',express.raw({type:'application/json',limit:'128kb'}),async(req,res,next)=>{try{if(!verifyWebhook(req.body,req.headers['x-webhook-timestamp'],req.headers['x-webhook-signature']))fail('Invalid webhook signature',401);const payload=JSON.parse(req.body.toString());const orderId=payload.data?.order?.order_id;if(orderId)await settlePayment(orderId);res.json({received:true});}catch(e){next(e);}});
 app.use('/api',rateLimit({windowMs:60_000,limit:emulator?1000:180,standardHeaders:'draft-8',legacyHeaders:false,message:{error:'Too many requests. Please try again shortly.'}}));
 app.use(express.json({limit:'256kb'}));
-app.use((req,res,next)=>{res.set('X-Content-Type-Options','nosniff');if(req.path.startsWith('/api/'))res.set('Cache-Control','no-store');if(!['GET','HEAD','OPTIONS'].includes(req.method)&&req.headers.origin){const sameOrigin=req.headers.origin===`${emulator?'http':'https'}://${req.headers.host}`;const allowed=[process.env.PUBLIC_STORE_URL?.replace(/\/$/,''), ...(process.env.VERCEL_URL?[`https://${process.env.VERCEL_URL}`]:[]), ...(process.env.VERCEL_PROJECT_PRODUCTION_URL?[`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]:[]), ...(process.env.VERCEL?[]:['http://127.0.0.1:5173','http://localhost:5173'])].filter(Boolean);if(!sameOrigin&&!allowed.includes(req.headers.origin))return res.status(403).json({error:'Origin not allowed'});}next();});
+app.use((req,res,next)=>{res.set('X-Content-Type-Options','nosniff');if(req.path.startsWith('/api/'))res.set('Cache-Control','no-store');if(!['GET','HEAD','OPTIONS'].includes(req.method)&&req.headers.origin){const sameOrigin=req.headers.origin===`${emulator?'http':'https'}://${req.headers.host}`;const allowed=[(process.env.PUBLIC_STORE_URL||appConfig.frontendUrl).replace(/\/$/,''), ...(process.env.VERCEL_URL?[`https://${process.env.VERCEL_URL}`]:[]), ...(process.env.VERCEL_PROJECT_PRODUCTION_URL?[`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]:[]), ...(process.env.VERCEL?[]:['http://127.0.0.1:5173','http://localhost:5173'])].filter(Boolean);if(!sameOrigin&&!allowed.includes(req.headers.origin))return res.status(403).json({error:'Origin not allowed'});}next();});
 app.get('/api/config',async(req,res)=>res.json({emulator,paymentMode:cashfreeReady()?paymentMode():'disabled',...await getSettings()}));
 app.get('/api/products',async(req,res)=>res.json((await all('products')).filter(p=>p.status==='active')));
 app.get('/api/products/:id',async(req,res)=>{const s=await db.doc(`products/${id(req.params.id)}`).get();if(!s.exists||s.data().status!=='active')fail('Product not found',404);res.json({...s.data(),id:s.id});});
@@ -48,7 +49,7 @@ app.post('/api/orders',authenticated,async(req,res)=>{
  const key=text(req.headers['idempotency-key'],100);if(!/^[\w-]{16,100}$/.test(key))fail('Idempotency key required');
  const shipping=address(req.body.address);const lines=req.body.items;if(!Array.isArray(lines)||!lines.length||lines.length>50)fail('Your bag is empty or too large');
  const grouped=new Map();for(const line of lines){const pid=id(line.id);grouped.set(pid,(grouped.get(pid)||0)+int(line.quantity,1,99));}for(const q of grouped.values())int(q,1,99);
- const method=req.body.paymentMethod;if(method==='demo'&&!emulator)fail('Demo checkout disabled',403);if(!['demo','cashfree'].includes(method))fail('Invalid payment method');if(method==='cashfree'&&!cashfreeReady())fail('Cashfree has not been connected yet',503);if(method==='cashfree'&&!publicHttps(process.env.PUBLIC_STORE_URL))fail('Configure a public HTTPS checkout domain first',503);
+ const method=req.body.paymentMethod;if(method==='demo'&&!emulator)fail('Demo checkout disabled',403);if(!['demo','cashfree'].includes(method))fail('Invalid payment method');if(method==='cashfree'&&!cashfreeReady())fail('Cashfree has not been connected yet',503);if(method==='cashfree'&&!publicHttps(process.env.PUBLIC_STORE_URL||appConfig.frontendUrl))fail('Configure a public HTTPS checkout domain first',503);
  const orderId='aq_'+createHash('sha256').update(req.user.uid+key).digest('hex').slice(0,26);const ref=db.doc(`orders/${orderId}`);const settings=await getSettings();
  const requestHash=createHash('sha256').update(JSON.stringify({items:[...grouped].sort(),shipping,method})).digest('hex');
  const result=await db.runTransaction(async tx=>{
@@ -80,7 +81,7 @@ app.post('/api/orders',authenticated,async(req,res)=>{
 });
 app.post('/api/orders/:id/payment',authenticated,async(req,res)=>{
  const ref=db.doc(`orders/${id(req.params.id)}`);const snap=await ref.get();if(!snap.exists||snap.data().uid!==req.user.uid)fail('Order not found',404);const order=snap.data();if(order.paymentMethod!=='cashfree'||order.status!=='pending_payment')fail('Order is not awaiting payment',409);
- const site=process.env.PUBLIC_STORE_URL;if(!publicHttps(site))fail('Configure a public HTTPS checkout domain first',503);
+ const site=process.env.PUBLIC_STORE_URL||appConfig.frontendUrl;if(!publicHttps(site))fail('Configure a public HTTPS checkout domain first',503);
  const remote=await cashfree('/orders',{method:'POST',headers:{'x-idempotency-key':order.paymentKey},body:JSON.stringify({order_id:order.id,order_amount:order.totalPaise/100,order_currency:'INR',customer_details:{customer_id:order.uid,customer_email:order.email,customer_phone:order.address.phone.replace(/\D/g,'').slice(-10),customer_name:order.address.name},order_meta:{return_url:`${site}/account?order=${order.id}`,notify_url:`${site}/api/payments/cashfree/webhook`}})});
  await ref.update({cashfreeOrderId:remote.cf_order_id});res.json({paymentSessionId:remote.payment_session_id,mode:paymentMode()});
 });

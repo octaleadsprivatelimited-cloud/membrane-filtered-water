@@ -1,9 +1,11 @@
+import {createPrivateKey} from 'node:crypto';
+import appConfig from '../src/config/appConfig.js';
 import {initializeApp,cert,applicationDefault} from 'firebase-admin/app';
 import {getAuth} from 'firebase-admin/auth';
 import {getFirestore} from 'firebase-admin/firestore';
 import {parseServiceAccount} from './service-account.mjs';
-export const emulator=process.env.STORE_MODE==='emulator';
-export const projectId=process.env.FIREBASE_PROJECT_ID||(emulator?'demo-aquapure-store':'membrane-7677f');
+export const emulator=process.env.STORE_MODE ? process.env.STORE_MODE==='emulator' : !process.env.VERCEL&&process.env.NODE_ENV!=='production';
+export const projectId=process.env.FIREBASE_PROJECT_ID||(emulator?appConfig.local.firebaseProjectId:appConfig.firebase.projectId);
 let app,initializationError;
 let configurationCode='FIREBASE_INITIALIZATION_FAILED';
 try {
@@ -21,9 +23,14 @@ try {
    let account;
    configurationCode='FIREBASE_SERVICE_ACCOUNT_JSON';
    try{account=parseServiceAccount(process.env.FIREBASE_SERVICE_ACCOUNT);}catch{throw new Error('FIREBASE_SERVICE_ACCOUNT must be valid JSON.');}
+   configurationCode='FIREBASE_CREDENTIAL_FIELDS';
+   if(!account.project_id||typeof account.client_email!=='string'||typeof account.private_key!=='string')throw new Error('Service account requires project_id, client_email and private_key fields.');
    configurationCode='FIREBASE_PROJECT_MISMATCH';
    if(account?.project_id!==projectId)throw new Error('Firebase service account project does not match FIREBASE_PROJECT_ID.');
    if(typeof account.private_key==='string')account.private_key=account.private_key.replace(/\\n/g,'\n');
+   configurationCode='FIREBASE_PRIVATE_KEY_INVALID';
+   const key=createPrivateKey(account.private_key);
+   if(key.asymmetricKeyType!=='rsa')throw new Error('Firebase service account requires an RSA private key.');
    configurationCode='FIREBASE_SERVICE_ACCOUNT_INVALID';
    credential=cert(account);
   }else{
