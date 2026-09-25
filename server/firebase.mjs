@@ -1,6 +1,7 @@
 import {initializeApp,cert,applicationDefault} from 'firebase-admin/app';
 import {getAuth} from 'firebase-admin/auth';
 import {getFirestore} from 'firebase-admin/firestore';
+import {parseServiceAccount} from './service-account.mjs';
 export const emulator=process.env.STORE_MODE==='emulator';
 export const projectId=process.env.FIREBASE_PROJECT_ID||(emulator?'demo-aquapure-store':'membrane-7677f');
 let app,initializationError;
@@ -19,7 +20,7 @@ try {
   if(process.env.FIREBASE_SERVICE_ACCOUNT){
    let account;
    configurationCode='FIREBASE_SERVICE_ACCOUNT_JSON';
-   try{account=JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);}catch{throw new Error('FIREBASE_SERVICE_ACCOUNT must be valid JSON.');}
+   try{account=parseServiceAccount(process.env.FIREBASE_SERVICE_ACCOUNT);}catch{throw new Error('FIREBASE_SERVICE_ACCOUNT must be valid JSON.');}
    configurationCode='FIREBASE_PROJECT_MISMATCH';
    if(account?.project_id!==projectId)throw new Error('Firebase service account project does not match FIREBASE_PROJECT_ID.');
    if(typeof account.private_key==='string')account.private_key=account.private_key.replace(/\\n/g,'\n');
