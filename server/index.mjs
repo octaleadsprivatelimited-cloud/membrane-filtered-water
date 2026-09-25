@@ -117,5 +117,5 @@ app.get('/api/merchant/feed.xml',async(req,res)=>{const s=await getSettings();if
 app.use('/api',(req,res)=>res.status(404).json({error:'Endpoint not found'}));
 app.use(express.static(resolve('dist')));
 app.get('/{*path}',(req,res)=>res.sendFile(resolve('dist/index.html')));
-app.use((err,req,res,_next)=>{console.error(err.message);res.status(err.status||500).json({error:err.status?err.message:'Something went wrong. Please retry.'});});
+app.use((err,req,res,_next)=>{const configCode=typeof err.code==='string'&&err.code.startsWith('FIREBASE_')?err.code:undefined;console.error(configCode||'API_ERROR',err.message);res.status(err.status||500).json({error:err.status?err.message:'Something went wrong. Please retry.',...(configCode?{code:configCode}:{})});});
 export default app; if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).href) { const port=Number(process.env.PORT||8787);app.listen(port,emulator?'127.0.0.1':'0.0.0.0',()=>console.log(`Store API on ${port}; Firebase ${emulator?'EMULATOR':'LIVE'}; Cashfree ${paymentMode()}`)); }
