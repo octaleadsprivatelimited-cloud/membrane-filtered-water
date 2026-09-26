@@ -16,7 +16,7 @@ export function AuthProvider({children}) {
    const next=await api('/me');
    if(request===generation.current&&auth.currentUser?.uid===current.uid){setProfile(next);setError('');}
    return next;
-  } catch(e){if(request===generation.current){setError(e.message);setProfile(null);}throw e;}
+  } catch(e){if(request===generation.current){setError(e.code?`${e.message} (${e.code})`:e.message);setProfile(null);}throw e;}
  },[]);
  useEffect(()=>{
   let active=true;

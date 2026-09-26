@@ -83,7 +83,7 @@ export default function SignIn({ admin = false }) {
           ? 'The email or password is incorrect. Check your details, or create an account if you are new here.' 
           : err.code === 'auth/too-many-requests' 
             ? 'Too many attempts. Please wait a moment and try again.' 
-            : err.message.replace('Firebase: ', '')
+          : err.code && !err.code.startsWith('auth/') ? `${err.message.replace('Firebase: ', '')} (${err.code})` : err.message.replace('Firebase: ', '')
       );
     } finally {
       setBusy(false);
