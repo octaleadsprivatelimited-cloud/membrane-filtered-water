@@ -1,3 +1,4 @@
+import PaymentCenter from '../commerce/PaymentCenter';
 import {useState,useEffect} from 'react';
 import {Link,useNavigate} from 'react-router-dom';
 import {useAuth} from '../commerce/Auth';
@@ -8,6 +9,7 @@ import {Package, ShoppingCart, MapPin, UserRound, LogOut} from 'lucide-react';
 
 const menuItems = [
   {name: 'My Orders', icon: Package, tab: 'Orders'},
+  {name: 'Payments & Refunds', icon: Package, tab: 'Payments'},
   {name: 'My Cart', icon: ShoppingCart, tab: 'Cart'},
   {name: 'Addresses', icon: MapPin, tab: 'Addresses'},
   {name: 'Profile', icon: UserRound, tab: 'Profile'}
@@ -23,7 +25,7 @@ export default function CustomerDashboard() {
   const [address,setAddress]=useState({});
   const [busy,setBusy]=useState(false);
   
-  const load=async()=>setOrders(await api('/orders'));
+  const load=async()=>{setError('');setOrders(await api('/orders'));};
   
   useEffect(()=>{
     if(ready&&!user)navigate('/login');
@@ -56,7 +58,7 @@ export default function CustomerDashboard() {
   }
 
   return (
-    <div className="customer-dashboard-wrapper" style={{ background: '#f8fafc', minHeight: '100vh', width: '100%', paddingTop: '130px', paddingBottom: '60px' }}>
+    <div className="customer-dashboard-wrapper" style={{ background: '#f8fafc', minHeight: '100vh', width: '100%', paddingTop: '35px', paddingBottom: '60px' }}>
       <div className="commerce-page customer-dashboard-page" style={{ paddingTop: 0, background: 'transparent', minHeight: 'auto', margin: '0 auto' }}>
       <div className="customer-dashboard-grid">
         
@@ -105,11 +107,13 @@ export default function CustomerDashboard() {
             <div className="customer-panel">
               <header className="customer-panel-header">
                 <h2>My Orders</h2>
-                <p>Track and manage your orders</p>
+                <p>Track delivery, manage payments and request cancellations.</p><Link className="store-pill" to="/products">Place a new order</Link><button onClick={()=>load().catch(e=>setError(e.message))}>Refresh orders</button>
               </header>
               <Orders orders={orders} reload={load}/>
             </div>
           )}
+
+          {tab === 'Payments' && <PaymentCenter orders={orders} reload={load}/> }
 
           {tab === 'Addresses' && (
             <div className="customer-panel">

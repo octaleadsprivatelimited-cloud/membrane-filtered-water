@@ -1,3 +1,4 @@
+import PaymentCenter from '../../commerce/PaymentCenter';
 import {downloadOrders} from '../../commerce/admin-export';
 import {apiUrl} from '../../config/appConfig';
 import {useState,useEffect} from 'react';
@@ -213,27 +214,7 @@ return <div className="admin-shell">
     </table>
   </div>
 </>}
-{tab==='Payments'&&<>
-  <div className="commerce-table-wrap">
-    <table className="commerce-table">
-      <thead><tr><th>Date</th><th>Transaction ID</th><th>Order ID</th><th>Customer</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead>
-      <tbody>
-        {orders.filter(o => o.paymentStatus === 'paid').map(o => (
-           <tr key={o.id}>
-             <td>{new Date(o.paidAt || o.createdAt).toLocaleDateString()}</td>
-             <td><small>{o.transactionId || 'Not recorded'}</small></td>
-             <td><small>{o.id}</small></td>
-             <td><strong>{o.address?.name || o.email}</strong></td>
-             <td>{money(o.totalPaise/100)}</td>
-             <td><span className="commerce-badge">{o.paymentMethod}</span></td>
-             <td><span className="commerce-badge delivered">Paid</span></td>
-           </tr>
-        ))}
-        {orders.filter(o => o.paymentStatus === 'paid').length === 0 && <tr><td colSpan="7" style={{textAlign:'center', padding:'20px'}}>No payments found.</td></tr>}
-      </tbody>
-    </table>
-  </div>
-</>}
+{tab==='Payments'&&<PaymentCenter orders={orders} reload={load} admin/>}
 {tab==='Customers'&&<div className="commerce-table-wrap"><table className="commerce-table"><thead><tr><th>Name</th><th>Email</th><th>Joined</th><th>Orders</th></tr></thead><tbody>{customers.map(c=><tr key={c.id}><td>{c.name||'—'}</td><td>{c.email}</td><td>{c.createdAt?new Date(c.createdAt).toLocaleDateString():'—'}</td><td>{orders.filter(o=>o.uid===c.id).length}</td></tr>)}</tbody></table></div>}
 {tab==='Google Merchant'&&<><section className="commerce-panel"><h2>Product feed readiness</h2><p>Status: {merchant?.enabled?'Live publication enabled':'Not published'}. A public HTTPS domain, real product photos, valid identifiers, policies and live checkout are needed before submission. Google approval is not automatic.</p><p><code>{merchant?.feedUrl}</code></p><button className="store-pill" onClick={exportFeed}>Download eligible-product XML preview</button><p className="commerce-note">An empty preview means no products currently pass the readiness checks. Add this feed in Merchant Center only after deployment and account verification.</p></section>{merchant?.products.map(p=><article className="commerce-panel" key={p.id}><strong>{p.name}</strong>{p.issues.length?<ul>{p.issues.map(i=><li key={i}>• {i}</li>)}</ul>:<p>Ready for the feed.</p>}</article>)}</>}
 {tab==='Categories' && settings && (
