@@ -1,7 +1,9 @@
-import test from 'node:test';
+import {db} from '../server/database.mjs';
+import test, {after} from 'node:test';
+after(async()=>{await db.close?.();});
 import assert from 'node:assert/strict';
 import {randomUUID,createHmac} from 'node:crypto';
-import {auth,db,emulator} from '../server/firebase.mjs';
+import {auth,emulator} from '../server/firebase.mjs';
 import {merchantIssues,merchantFeed,validGtin} from '../server/merchant.mjs';
 import {verifyWebhook} from '../server/cashfree.mjs';
 if(!emulator)throw new Error('Integration tests are emulator-only');

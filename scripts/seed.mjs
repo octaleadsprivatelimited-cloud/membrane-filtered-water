@@ -1,4 +1,5 @@
-import { auth, db, emulator } from '../server/firebase.mjs';
+import {db} from '../server/database.mjs';
+import { auth, emulator } from '../server/firebase.mjs';
 import { randomBytes } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 if(!emulator)throw new Error('Seed is only permitted in emulator mode.');
@@ -10,3 +11,5 @@ try { await auth.getUserByEmail(email); } catch(e) {
 const { fetchProducts }=await import('../src/firebase/mockDb.js');
 if((await db.collection('products').limit(1).get()).empty){for(const p of await fetchProducts())await db.doc(`products/${p.id}`).set({...p,description:p.features.join('. '),stock:20,status:'active',brand:'AquaPure',condition:'new',identifiersExist:true,gtin:'',mpn:'',merchantEnabled:false,demo:true,createdAt:new Date().toISOString()});}
 console.log('Emulator seed ready. Existing data preserved.');
+
+await db.close?.();

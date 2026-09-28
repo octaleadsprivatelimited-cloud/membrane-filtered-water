@@ -4,12 +4,13 @@ import { rateLimit } from 'express-rate-limit';
 import { randomUUID, createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { auth, db, emulator, assertFirebaseReady } from './firebase.mjs';
+import { auth, emulator, assertFirebaseReady } from './firebase.mjs';
 import { merchantFeed, merchantIssues, publicHttps, validGtin } from './merchant.mjs';
 import { cashfree, cashfreeReady, paymentMode, verifyWebhook } from './cashfree.mjs';
+import {db,assertDatabaseReady,databaseDriver} from './database.mjs';
 const app=express();
 app.disable('x-powered-by');
-app.use('/api',(req,res,next)=>{try{assertFirebaseReady();next();}catch(error){next(error);}});
+app.use('/api',async(req,res,next)=>{try{assertFirebaseReady();await assertDatabaseReady();next();}catch(error){next(error);}});
 const fail=(message,status=400)=>{const e=new Error(message);e.status=status;throw e;};
 const text=(v,max=200)=>typeof v==='string'?v.trim().slice(0,max):'';
 const id=v=>/^[\w-]{1,100}$/.test(v||'')?v:fail('Invalid identifier');
@@ -38,8 +39,8 @@ async function settlePayment(orderId) {
 app.post('/api/payments/cashfree/webhook',express.raw({type:'application/json',limit:'128kb'}),async(req,res,next)=>{try{if(!verifyWebhook(req.body,req.headers['x-webhook-timestamp'],req.headers['x-webhook-signature']))fail('Invalid webhook signature',401);const payload=JSON.parse(req.body.toString());const orderId=payload.data?.order?.order_id;if(orderId)await settlePayment(orderId);res.json({received:true});}catch(e){next(e);}});
 app.use('/api',rateLimit({windowMs:60_000,limit:emulator?1000:180,standardHeaders:'draft-8',legacyHeaders:false,message:{error:'Too many requests. Please try again shortly.'}}));
 app.use(express.json({limit:'256kb'}));
-app.use((req,res,next)=>{res.set('X-Content-Type-Options','nosniff');if(req.path.startsWith('/api/'))res.set('Cache-Control','no-store');if(!['GET','HEAD','OPTIONS'].includes(req.method)&&req.headers.origin){const sameOrigin=req.headers.origin===`${emulator?'http':'https'}://${req.headers.host}`;const allowed=[(process.env.PUBLIC_STORE_URL||appConfig.frontendUrl).replace(/\/$/,''), ...(process.env.VERCEL_URL?[`https://${process.env.VERCEL_URL}`]:[]), ...(process.env.VERCEL_PROJECT_PRODUCTION_URL?[`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]:[]), ...(process.env.VERCEL?[]:['http://127.0.0.1:5173','http://localhost:5173'])].filter(Boolean);if(!sameOrigin&&!allowed.includes(req.headers.origin))return res.status(403).json({error:'Origin not allowed'});}next();});
-app.get('/api/config',async(req,res)=>res.json({emulator,paymentMode:cashfreeReady()?paymentMode():'disabled',...await getSettings()}));
+app.use((req,res,next)=>{res.set('X-Content-Type-Options','nosniff');if(req.path.startsWith('/api/'))res.set('Cache-Control','no-store');if(!['GET','HEAD','OPTIONS'].includes(req.method)&&req.headers.origin){const sameOrigin=req.headers.origin===`${emulator?'http':'https'}://${req.headers.host}`;const allowed=[(process.env.PUBLIC_STORE_URL||appConfig.frontendUrl).replace(/\/$/,''), ...(process.env.VERCEL_URL?[`https://${process.env.VERCEL_URL}`]:[]), ...(process.env.VERCEL_PROJECT_PRODUCTION_URL?[`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]:[]), ...(process.env.VERCEL?[]:['http://127.0.0.1:5173','http://localhost:5173','http://127.0.0.1:5174','http://localhost:5174'])].filter(Boolean);if(!sameOrigin&&!allowed.includes(req.headers.origin))return res.status(403).json({error:'Origin not allowed'});}next();});
+app.get('/api/config',async(req,res)=>res.json({emulator,database:databaseDriver,paymentMode:cashfreeReady()?paymentMode():'disabled',...await getSettings()}));
 app.get('/api/products',async(req,res)=>res.json((await all('products')).filter(p=>p.status==='active')));
 app.get('/api/products/:id',async(req,res)=>{const s=await db.doc(`products/${id(req.params.id)}`).get();if(!s.exists||s.data().status!=='active')fail('Product not found',404);res.json({...s.data(),id:s.id});});
 app.get('/api/me',authenticated,async(req,res)=>{const ref=db.doc(`customers/${req.user.uid}`);const data=await db.runTransaction(async tx=>{const snap=await tx.get(ref);if(snap.exists)return snap.data();const created={email:req.user.email||'',name:req.user.name||'',addresses:[],createdAt:new Date().toISOString()};tx.create(ref,created);return created;});res.json({...data,addresses:Array.isArray(data.addresses)?data.addresses:[],uid:req.user.uid,admin:req.user.admin===true || (req.user.email_verified===true&&req.user.email === 'aquasafe.ap@gmail.com')});});
@@ -118,5 +119,5 @@ app.get('/api/merchant/feed.xml',async(req,res)=>{const s=await getSettings();if
 app.use('/api',(req,res)=>res.status(404).json({error:'Endpoint not found'}));
 app.use(express.static(resolve('dist')));
 app.get('/{*path}',(req,res)=>res.sendFile(resolve('dist/index.html')));
-app.use((err,req,res,_next)=>{const configCode=typeof err.code==='string'&&err.code.startsWith('FIREBASE_')?err.code:undefined;console.error(configCode||'API_ERROR',err.message);res.status(err.status||500).json({error:err.status?err.message:'Something went wrong. Please retry.',...(configCode?{code:configCode}:{})});});
+app.use((err,req,res,_next)=>{const configCode=typeof err.code==='string'&&(err.code.startsWith('FIREBASE_')||err.code==='DATABASE_UNAVAILABLE')?err.code:undefined;console.error(configCode||'API_ERROR',err.message);res.status(err.status||500).json({error:err.status?err.message:'Something went wrong. Please retry.',...(configCode?{code:configCode}:{})});});
 export default app; if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).href) { const port=Number(process.env.PORT||8787);app.listen(port,emulator?'127.0.0.1':'0.0.0.0',()=>console.log(`Store API on ${port}; Firebase ${emulator?'EMULATOR':'LIVE'}; Cashfree ${paymentMode()}`)); }

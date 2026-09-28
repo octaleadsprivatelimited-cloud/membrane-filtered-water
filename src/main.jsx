@@ -12,3 +12,5 @@ createRoot(document.getElementById('root')).render(
 )
 
 import './marketplace.css'
+
+import './smart-theme.css'
