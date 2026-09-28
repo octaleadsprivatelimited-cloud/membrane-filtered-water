@@ -26,6 +26,7 @@ function product(v,existing={}){
  if(!p.name||!p.description||!Number.isFinite(p.price)||p.price<=0||p.price>10000000||!Number.isFinite(p.originalPrice)||p.originalPrice<p.price)fail('Title, description and valid prices are required.');
  if(p.image&&!/^https?:\/\//.test(p.image)&&!/^\/[\w./-]+$/.test(p.image)&&!/^data:image\//.test(p.image))fail('Use a valid image URL, local asset path, or base64 image.');
  if(p.gtin&&!validGtin(p.gtin))fail('Invalid GTIN checksum.');
+ if(Buffer.byteLength(JSON.stringify(p),'utf8')>800000)fail('Product images are too large. Use smaller images or hosted image URLs.',413);
  p.price=Math.round(p.price*100)/100;p.originalPrice=Math.round(p.originalPrice*100)/100;p.discount=p.originalPrice>p.price?`${Math.round((1-p.price/p.originalPrice)*100)}% OFF`:'';
  return p;
 }
@@ -38,7 +39,7 @@ async function settlePayment(orderId) {
 }
 app.post('/api/payments/cashfree/webhook',express.raw({type:'application/json',limit:'128kb'}),async(req,res,next)=>{try{if(!verifyWebhook(req.body,req.headers['x-webhook-timestamp'],req.headers['x-webhook-signature']))fail('Invalid webhook signature',401);const payload=JSON.parse(req.body.toString());const orderId=payload.data?.order?.order_id;if(orderId)await settlePayment(orderId);res.json({received:true});}catch(e){next(e);}});
 app.use('/api',rateLimit({windowMs:60_000,limit:emulator?1000:180,standardHeaders:'draft-8',legacyHeaders:false,message:{error:'Too many requests. Please try again shortly.'}}));
-app.use(express.json({limit:'256kb'}));
+app.use(express.json({limit:'1mb'}));
 app.use((req,res,next)=>{res.set('X-Content-Type-Options','nosniff');if(req.path.startsWith('/api/'))res.set('Cache-Control','no-store');if(!['GET','HEAD','OPTIONS'].includes(req.method)&&req.headers.origin){const sameOrigin=req.headers.origin===`${emulator?'http':'https'}://${req.headers.host}`;const allowed=[(process.env.PUBLIC_STORE_URL||appConfig.frontendUrl).replace(/\/$/,''), ...(process.env.VERCEL_URL?[`https://${process.env.VERCEL_URL}`]:[]), ...(process.env.VERCEL_PROJECT_PRODUCTION_URL?[`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]:[]), ...(process.env.VERCEL?[]:['http://127.0.0.1:5173','http://localhost:5173','http://127.0.0.1:5174','http://localhost:5174'])].filter(Boolean);if(!sameOrigin&&!allowed.includes(req.headers.origin))return res.status(403).json({error:'Origin not allowed'});}next();});
 app.get('/api/config',async(req,res)=>res.json({emulator,database:databaseDriver,paymentMode:cashfreeReady()?paymentMode():'disabled',...await getSettings()}));
 app.get('/api/products',async(req,res)=>res.json((await all('products')).filter(p=>p.status==='active')));
@@ -96,11 +97,17 @@ app.post('/api/admin/products',async(req,res)=>{const p=product(req.body);const 
 app.put('/api/admin/products/:id',async(req,res)=>{const ref=db.doc(`products/${id(req.params.id)}`);await db.runTransaction(async tx=>{const old=await tx.get(ref);if(!old.exists)fail('Product not found',404);tx.set(ref,product(req.body,old.data()));});res.json({ok:true});});
 app.post('/api/admin/orders/manual',async(req,res)=>{
  const {email, customerName, orderId: customId, quantity, productName, price, status, paymentStatus} = req.body;
- const orderId = (customId || ('aq_manual_'+Date.now())).trim();
+ const orderId = id(text(customId,100) || ('aq_manual_'+randomUUID()));
+ const units=int(quantity,1,99),unitPrice=Number(price);
+ if(!text(customerName,100)||!text(productName,200)||!/^\S+@\S+\.\S+$/.test(text(email,100)))fail('Customer name, valid email and product name are required.');
+ if(!Number.isFinite(unitPrice)||unitPrice<=0||unitPrice>10000000)fail('Enter a valid unit price.');
+ if(!['pending_payment','confirmed','processing','shipped','delivered'].includes(status)||!['paid','pending'].includes(paymentStatus))fail('Invalid order or payment status.');
+ if((paymentStatus==='pending')!==(status==='pending_payment'))fail('Unpaid manual orders must remain pending payment; paid orders must be confirmed or fulfilled.');
+ const totalPaise=Math.round(unitPrice*100)*units;
  const ref=db.doc(`orders/${orderId}`);
  const isPaid = paymentStatus === 'paid';
- const order={id:orderId,uid:'manual_uid',email:text(email,100),items:[{id:'manual',name:text(productName,200),price:Number(price),quantity:Number(quantity)||1,image:''}],address:{name:text(customerName,100),phone:'',line1:'',city:'',state:'',pincode:'000000'},subtotalPaise:Number(price)*100,shippingPaise:0,totalPaise:Number(price)*100,currency:'INR',paymentMethod:'manual',paymentStatus:text(paymentStatus,50)||'paid',status:text(status,50)||'confirmed',createdAt:new Date().toISOString(),paidAt:isPaid?new Date().toISOString():null,transactionId:isPaid?'cf_manual_'+Date.now():null,requestHash:'',tracking:'',paymentKey:randomUUID()};
- await ref.set(order);
+ const order={id:orderId,uid:'manual_uid',email:text(email,100),items:[{id:'manual',name:text(productName,200),price:Math.round(unitPrice*100)/100,quantity:units,image:''}],address:{name:text(customerName,100),phone:'',line1:'',city:'',state:'',pincode:'000000'},subtotalPaise:totalPaise,shippingPaise:0,totalPaise,currency:'INR',paymentMethod:'manual',paymentStatus:text(paymentStatus,50)||'paid',status:text(status,50)||'confirmed',createdAt:new Date().toISOString(),paidAt:isPaid?new Date().toISOString():null,transactionId:null,requestHash:'',tracking:'',paymentKey:randomUUID()};
+ await db.runTransaction(async tx=>{if((await tx.get(ref)).exists)fail('Order ID already exists',409);tx.create(ref,order);});
  res.status(201).json(order);
 });
 app.get('/api/admin/orders',async(req,res)=>res.json((await all('orders')).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))));

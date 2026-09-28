@@ -1,3 +1,4 @@
+import {downloadOrders} from '../../commerce/admin-export';
 import {apiUrl} from '../../config/appConfig';
 import {useState,useEffect} from 'react';
 import {Link,useNavigate} from 'react-router-dom';
@@ -8,10 +9,10 @@ import {money} from '../../store/Shop';
 import Orders from '../../commerce/Orders';
 import ProductEditor from '../../commerce/ProductEditor';
 import { LayoutDashboard, Package, ShoppingCart, Users, Settings, LogOut, DollarSign, Clock, Box, Leaf, List, FileText } from 'lucide-react';
-export default function Dashboard(){const {user,ready,profile,logout,config,error:authError}=useAuth();const navigate=useNavigate();const [tab,setTab]=useState('Overview');const [products,setProducts]=useState([]);const [orders,setOrders]=useState([]);const [customers,setCustomers]=useState([]);const [settings,setSettings]=useState(null);const [merchant,setMerchant]=useState(null);const [editor,setEditor]=useState(false);const [manualOrderEditor,setManualOrderEditor]=useState(false);const [selected,setSelected]=useState(null);const [query,setQuery]=useState('');const [error,setError]=useState('');const [notice,setNotice]=useState('');const [busy,setBusy]=useState(false);const load=async()=>{const [p,o,c,s,m]=await Promise.all([api('/admin/products'),api('/admin/orders'),api('/admin/customers'),api('/config'),api('/admin/merchant')]);setProducts(p);setOrders(o);setCustomers(c);setSettings(s);setMerchant(m);};useEffect(()=>{if(ready&&!user)navigate('/admin');if(ready&&user&&profile&&!profile.admin){logout().then(()=>navigate('/admin'));}if(profile?.admin)load().catch(e=>setError(e.message));},[ready,user,profile,navigate,logout]);if(authError)return <div className="commerce-page" role="alert">{authError} <button onClick={()=>window.location.reload()}>Retry</button></div>;if(!ready||!profile||!profile.admin)return null;async function saveSettings(e){e.preventDefault();setBusy(true);setError('');try{await api('/admin/settings',{method:'PUT',body:JSON.stringify(settings)});setNotice('Store settings saved.');await load();}catch(e){setError(e.message);}finally{setBusy(false);}}async function exportFeed(){try{const token=await auth.currentUser.getIdToken();const r=await fetch(apiUrl('/admin/merchant/export'),{headers:{Authorization:`Bearer ${token}`}});if(!r.ok)throw new Error('Could not export feed');const url=URL.createObjectURL(await r.blob());const a=document.createElement('a');a.href=url;a.download='merchant-preview.xml';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){setError(e.message);}}
+export default function Dashboard(){const {user,ready,profile,logout,config,refreshConfig,error:authError}=useAuth();const navigate=useNavigate();const [tab,setTab]=useState('Overview');const [products,setProducts]=useState([]);const [orders,setOrders]=useState([]);const [customers,setCustomers]=useState([]);const [settings,setSettings]=useState(null);const [merchant,setMerchant]=useState(null);const [editor,setEditor]=useState(false);const [manualOrderEditor,setManualOrderEditor]=useState(false);const [selected,setSelected]=useState(null);const [query,setQuery]=useState('');const [error,setError]=useState('');const [notice,setNotice]=useState('');const [busy,setBusy]=useState(false);const load=async()=>{const [p,o,c,s,m]=await Promise.all([api('/admin/products'),api('/admin/orders'),api('/admin/customers'),api('/config'),api('/admin/merchant')]);setProducts(p);setOrders(o);setCustomers(c);setSettings(s);setMerchant(m);};useEffect(()=>{if(ready&&!user)navigate('/admin');if(ready&&user&&profile&&!profile.admin){navigate('/account');}if(profile?.admin)load().catch(e=>setError(e.message));},[ready,user,profile,navigate,logout]);if(authError)return <div className="commerce-page" role="alert">{authError} <button onClick={()=>window.location.reload()}>Retry</button></div>;if(!ready||!profile)return <p className="commerce-page" role="status">Loading administrator account…</p>;if(!profile.admin)return <p className="commerce-page" role="alert">Administrator access required. <Link to="/account">Go to your account</Link></p>;async function saveSettings(e){e.preventDefault();setBusy(true);setError('');try{await api('/admin/settings',{method:'PUT',body:JSON.stringify(settings)});setNotice('Store settings saved.');await refreshConfig();await load();}catch(e){setError(e.message);}finally{setBusy(false);}}async function exportFeed(){try{const token=await auth.currentUser.getIdToken();const r=await fetch(apiUrl('/admin/merchant/export'),{headers:{Authorization:`Bearer ${token}`}});if(!r.ok)throw new Error('Could not export feed');const url=URL.createObjectURL(await r.blob());const a=document.createElement('a');a.href=url;a.download='merchant-preview.xml';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){setError(e.message);}}
 const uniqueCategories = Array.from(new Set([...(settings?.categories || []), ...products.map(p => p.category).filter(Boolean)]));
 const lowStock = products.filter(p => p.stock < 5 && p.status === 'active');
-const menuItems = [{name:'Dashboard',icon:LayoutDashboard,tab:'Overview'},{name:'Categories',icon:List,tab:'Categories'},{name:'Products',icon:Package,tab:'Products'},{name:'Orders',icon:ShoppingCart,tab:'Orders'},{name:'Payments',icon:DollarSign,tab:'Payments'},{name:'Users',icon:Users,tab:'Customers'},{name:'Settings',icon:Settings,tab:'Settings'},{name:'Policies',icon:FileText,tab:'Policies'}];
+const menuItems = [{name:'Dashboard',icon:LayoutDashboard,tab:'Overview'},{name:'Categories',icon:List,tab:'Categories'},{name:'Products',icon:Package,tab:'Products'},{name:'Orders',icon:ShoppingCart,tab:'Orders'},{name:'Payments',icon:DollarSign,tab:'Payments'},{name:'Users',icon:Users,tab:'Customers'},{name:'Settings',icon:Settings,tab:'Settings'},{name:'Policies',icon:FileText,tab:'Policies'},{name:'Google Merchant',icon:Leaf,tab:'Google Merchant'}];
 
 return <div className="admin-shell">
   <aside className="admin-sidebar">
@@ -24,7 +25,7 @@ return <div className="admin-shell">
     </div>
     <span>Menu</span>
     <nav>
-      {menuItems.map(({name,icon:Icon,tab:t})=><button key={name} aria-pressed={tab===t} onClick={()=>{setTab(t);setNotice('');setEditor(false);}}><Icon /> {name}</button>)}
+      {menuItems.map(({name,icon:Icon,tab:t})=><button key={name} aria-pressed={tab===t} onClick={()=>{setTab(t);setNotice('');setError('');setQuery('');setEditor(false);setManualOrderEditor(false);}}><Icon /> {name}</button>)}
     </nav>
     <div className="admin-user-profile">
       <div className="admin-user-info">
@@ -44,8 +45,8 @@ return <div className="admin-shell">
         <span className="shop-kicker">{tab === 'Overview' ? 'Welcome to Aqua Safe Water Technologies Admin Panel' : `Manage your ${tab.toLowerCase()}`}</span>
       </div>
       <div className="commerce-heading-actions">
-        <button disabled={busy} onClick={()=>load().catch(e=>setError(e.message))}>Export Orders</button>
-        <button disabled={busy}>Export Payments</button>
+        <button disabled={busy} onClick={()=>downloadOrders(orders)}>Export Orders</button>
+        <button disabled={busy} onClick={()=>downloadOrders(orders,true)}>Export Payments</button>
       </div>
     </header>
     {error&&<p className="commerce-error" role="alert">{error}</p>}
@@ -75,14 +76,14 @@ return <div className="admin-shell">
         </article>
         <article>
           <span>Pending <Clock size={18}/></span>
-          <strong style={{color:'#d97706'}}>{orders.filter(o=>o.status==='pending').length}</strong>
+          <strong style={{color:'#d97706'}}>{orders.filter(o=>o.status==='pending_payment').length}</strong>
           <span className="metric-sub warning">Require attention</span>
         </article>
       </div>
       <div className="admin-grid">
         <section className="commerce-panel"><h2>Payment Summary</h2>
           <div style={{display:'flex', justifyContent:'space-between', marginBottom:'15px', fontSize:'14px'}}><span>Avg. Order Value</span> <strong>{orders.length ? money(orders.reduce((n,o)=>n+o.totalPaise/100,0)/orders.length) : '0'}</strong></div>
-          <div style={{display:'flex', justifyContent:'space-between', marginBottom:'15px', fontSize:'14px'}}><span>Pending Payments</span> <span className="commerce-badge pending">{orders.filter(o=>o.paymentStatus!=='paid').length}</span></div>
+          <div style={{display:'flex', justifyContent:'space-between', marginBottom:'15px', fontSize:'14px'}}><span>Pending Payments</span> <span className="commerce-badge pending">{orders.filter(o=>o.paymentStatus==='pending').length}</span></div>
           <div style={{display:'flex', justifyContent:'space-between', marginBottom:'15px', fontSize:'14px'}}><span>Completed</span> <span className="commerce-badge delivered">{orders.filter(o=>o.paymentStatus==='paid').length}</span></div>
         </section>
         <section className="commerce-panel"><h2>Recent Orders</h2><Orders orders={orders.slice(0,5)} reload={load} admin/></section>
@@ -114,7 +115,7 @@ return <div className="admin-shell">
               <tbody>
                  {(() => {
                     const counts = {};
-                    orders.forEach(o => { (o.items||[]).forEach(i => { counts[i.name] = (counts[i.name]||0) + i.quantity; }) });
+                    orders.filter(o=>o.status!=='cancelled'&&o.status!=='pending_payment').forEach(o => { (o.items||[]).forEach(i => { counts[i.name] = (counts[i.name]||0) + i.quantity; }) });
                     const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5);
                     if (!top.length) return <tr><td colSpan="2">No sales yet.</td></tr>;
                     return top.map(([name, count]) => (
@@ -148,7 +149,7 @@ return <div className="admin-shell">
                await api('/admin/orders/manual', { method: 'POST', body: JSON.stringify(Object.fromEntries(f)) });
                setNotice('Manual order created successfully!');
                setManualOrderEditor(false);
-               load();
+               await load();
             } catch(err) { setError(err.message); }
             finally { setBusy(false); }
         }}>
@@ -159,7 +160,7 @@ return <div className="admin-shell">
              <label>Order ID (Optional - leave blank to auto-generate) <input type="text" name="orderId"/></label>
              <label>No. of Products (Quantity) <input type="number" min="1" name="quantity" defaultValue="1" required/></label>
              <label>Products (Product Name) <input type="text" name="productName" required/></label>
-             <label>Total Price (₹) <input type="number" min="0" step="0.01" name="price" required/></label>
+             <label>Unit Price (₹) <input type="number" min="0.01" step="0.01" name="price" required/></label>
              <label>Status 
                <select name="status" defaultValue="confirmed">
                  <option value="pending_payment">Pending Payment</option>
@@ -171,7 +172,7 @@ return <div className="admin-shell">
              </label>
              <label>Payment Status
                <select name="paymentStatus" defaultValue="paid">
-                 <option value="paid">Paid</option>
+                 <option value="paid">Paid (recorded manually)</option>
                  <option value="pending">Pending</option>
                </select>
              </label>
@@ -198,15 +199,11 @@ return <div className="admin-shell">
              <td><span className="commerce-badge">{o.status}</span></td>
              <td><span className={"commerce-badge " + (o.paymentStatus==='paid'?'delivered':'pending')}>{o.paymentStatus}</span></td>
              <td>
-               <select aria-label="Update Status" defaultValue={o.status} onChange={(e) => {
-                  api(`/admin/orders/${o.id}`,{method:'PATCH',body:JSON.stringify({status:e.target.value,tracking:o.tracking})}).then(()=>load()).catch(err=>setError(err.message));
+               <select aria-label={`Update status for ${o.id}`} value={o.status} disabled={busy||!['confirmed','processing','shipped'].includes(o.status)} onChange={async(e) => {
+                  setBusy(true);setError('');try{await api(`/admin/orders/${o.id}`,{method:'PATCH',body:JSON.stringify({status:e.target.value,tracking:o.tracking})});await load();}catch(err){setError(err.message);}finally{setBusy(false);}
                }}>
-                  <option value="pending_payment">Pending Payment</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="processing">Processing</option>
-                  <option value="shipped">Shipped</option>
-                  <option value="delivered">Delivered</option>
-                  <option value="cancelled">Cancelled</option>
+                  <option value={o.status}>{o.status.replaceAll('_',' ')}</option>
+                  {{confirmed:'processing',processing:'shipped',shipped:'delivered'}[o.status]&&<option value={{confirmed:'processing',processing:'shipped',shipped:'delivered'}[o.status]}>{{confirmed:'processing',processing:'shipped',shipped:'delivered'}[o.status]}</option>}
                </select>
              </td>
            </tr>
@@ -224,7 +221,7 @@ return <div className="admin-shell">
         {orders.filter(o => o.paymentStatus === 'paid').map(o => (
            <tr key={o.id}>
              <td>{new Date(o.paidAt || o.createdAt).toLocaleDateString()}</td>
-             <td><small>{o.transactionId || 'cf_' + Math.random().toString(36).substr(2, 9)}</small></td>
+             <td><small>{o.transactionId || 'Not recorded'}</small></td>
              <td><small>{o.id}</small></td>
              <td><strong>{o.address?.name || o.email}</strong></td>
              <td>{money(o.totalPaise/100)}</td>
@@ -251,7 +248,7 @@ return <div className="admin-shell">
                  e.preventDefault();
                  setBusy(true);
                  try {
-                   const newCats = [...(settings.categories||[]), query.trim()];
+                   const newCats = [...new Set([...(settings.categories||[]), query.trim()])].filter(Boolean);
                    await api('/admin/settings',{method:'PUT',body:JSON.stringify({...settings, categories: newCats})});
                    setSettings({...settings, categories: newCats});
                    setQuery('');
@@ -264,7 +261,7 @@ return <div className="admin-shell">
               if(query) {
                  setBusy(true);
                  try {
-                   const newCats = [...(settings.categories||[]), query.trim()];
+                   const newCats = [...new Set([...(settings.categories||[]), query.trim()])].filter(Boolean);
                    await api('/admin/settings',{method:'PUT',body:JSON.stringify({...settings, categories: newCats})});
                    setSettings({...settings, categories: newCats});
                    setQuery('');
@@ -305,7 +302,7 @@ return <div className="admin-shell">
     )}
     {tab==='Settings'&&settings&&<form className="commerce-form commerce-panel" onSubmit={saveSettings}>
       <h2>Store Details & Shipping</h2>
-      <div className="commerce-fields">{[['businessName','Business name','text'],['siteUrl','Public store URL (HTTPS)','url'],['supportEmail','Support email','email'],['shippingFee','Flat shipping fee (INR)','number'],['freeShippingAbove','Free shipping threshold (0 = disabled)','number']].map(([k,label,type])=><label key={k}>{label}<input type={type} min={0} step={type==='number'?'0.01':undefined} value={settings[k]} onChange={e=>setSettings({...settings,[k]:e.target.value})}/></label>)}</div>
+      <div className="commerce-fields">{[['businessName','Business name','text'],['siteUrl','Public store URL (HTTPS)','url'],['supportEmail','Support email','email'],['shippingFee','Shipping rate per estimated km (INR)','number'],['freeShippingAbove','Free shipping threshold (0 = disabled)','number']].map(([k,label,type])=><label key={k}>{label}<input type={type} min={0} step={type==='number'?'0.01':undefined} value={settings[k]} onChange={e=>setSettings({...settings,[k]:e.target.value})}/></label>)}</div>
       
       <label className="commerce-checkbox" style={{marginTop: '20px'}}><input type="checkbox" checked={settings.merchantLive} onChange={e=>setSettings({...settings,merchantLive:e.target.checked})}/>Publish Google product feed (live setup required)</label>
       <p className="commerce-note">Cashfree: {settings.paymentMode}. Configure provider keys in the server environment, never in this dashboard or frontend.</p>

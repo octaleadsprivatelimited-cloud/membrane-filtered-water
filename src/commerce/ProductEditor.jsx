@@ -8,7 +8,7 @@ const blank = {
 
 export default function ProductEditor({product, onDone, onClose, categories}) {
   const [value, setValue] = useState(product || blank);
-  const [features, setFeatures] = useState(value.features.join('\n'));
+  const [features, setFeatures] = useState((value.features||[]).join('\n'));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
@@ -97,9 +97,21 @@ export default function ProductEditor({product, onDone, onClose, categories}) {
             <label>Stock * <input type="number" required min="0" step="1" value={value.stock} onChange={e => change('stock', parseInt(e.target.value))} /></label>
           </div>
 
-          <label style={{marginBottom: '20px'}}>Short Description *<input required placeholder="Brief product description" value={value.features[0] || ''} onChange={e => setFeatures(e.target.value)} /></label>
+          <label style={{marginBottom: '20px'}}>Short Description *<input required placeholder="Brief product description" value={features} onChange={e => setFeatures(e.target.value)} /></label>
           <label style={{marginBottom: '20px'}}>Full Description<textarea rows={4} placeholder="Detailed product description" required value={value.description} onChange={e => change('description', e.target.value)} /></label>
 
+          <div className="commerce-fields">
+            <label>Listing status<select value={value.status} onChange={e=>change('status',e.target.value)}><option value="draft">Draft</option><option value="active">Active</option><option value="archived">Archived</option></select></label>
+            <label>SKU<input value={value.sku||''} onChange={e=>change('sku',e.target.value)}/></label>
+            <label>Brand<input value={value.brand||''} onChange={e=>change('brand',e.target.value)}/></label>
+            <label>GTIN<input value={value.gtin||''} onChange={e=>change('gtin',e.target.value)}/></label>
+            <label>MPN<input value={value.mpn||''} onChange={e=>change('mpn',e.target.value)}/></label>
+            <label>Condition<select value={value.condition||'new'} onChange={e=>change('condition',e.target.value)}><option value="new">New</option><option value="used">Used</option><option value="refurbished">Refurbished</option></select></label>
+            <label>Primary image URL<input value={value.image||''} onChange={e=>change('image',e.target.value)}/></label>
+          </div>
+          <label><input type="checkbox" checked={value.merchantEnabled===true} onChange={e=>change('merchantEnabled',e.target.checked)}/> Include in Google Merchant feed</label>
+          <label><input type="checkbox" checked={value.identifiersExist!==false} onChange={e=>change('identifiersExist',e.target.checked)}/> Product has manufacturer identifiers</label>
+          <label><input type="checkbox" checked={value.demo===true} onChange={e=>change('demo',e.target.checked)}/> Demo product (excluded from live feed)</label>
           <div className="commerce-images-section">
             <label style={{fontWeight: 600}}>Product Images</label>
             <div className="commerce-image-preview">

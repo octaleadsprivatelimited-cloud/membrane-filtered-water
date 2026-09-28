@@ -30,7 +30,8 @@ export function AuthProvider({children}) {
   });
   return ()=>{active=false;++generation.current;unsubscribe();};
  },[refresh]);
+ const refreshConfig=useCallback(async()=>{try{const value=await api('/config');setConfig(value);setConfigError('');return value;}catch(e){setConfigError(e.message);throw e;}},[]);
  const logout=useCallback(()=>signOut(auth),[]);
- return <Context.Provider value={{user,ready,profile,config,configError,error,refresh,logout}}>{children}</Context.Provider>;
+ return <Context.Provider value={{user,ready,profile,config,configError,error,refresh,refreshConfig,logout}}>{children}</Context.Provider>;
 }
 export const useAuth=()=>useContext(Context);

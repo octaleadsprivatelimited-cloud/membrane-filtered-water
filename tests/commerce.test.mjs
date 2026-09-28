@@ -24,6 +24,15 @@ test('commerce security, inventory and lifecycle',async t=>{
  await t.test('overselling prevented in concurrent checkouts',async()=>{const results=await Promise.all([request('/orders',ut,'POST',payload,randomUUID()),request('/orders',st,'POST',payload,randomUUID())]);assert.deepEqual(results.map(r=>r.status).sort(),[201,409]);orderIds.push(results.find(r=>r.status===201).body.id);assert.equal((await db.doc('products/'+pid).get()).data().stock,0);});
  await t.test('cancel restores stock exactly once',async()=>{assert.equal((await request(`/orders/${order.id}/cancel`,ut,'POST')).status,200);assert.equal((await request(`/orders/${order.id}/cancel`,ut,'POST')).status,200);assert.equal((await db.doc('products/'+pid).get()).data().stock,1);});
  await t.test('invalid fulfillment transitions blocked',async()=>{const other=orderIds[1];assert.equal((await request('/admin/orders/'+other,at,'PATCH',{status:'delivered'})).status,409);assert.equal((await request('/admin/orders/'+other,at,'PATCH',{status:'processing'})).status,200);assert.equal((await request('/admin/orders/'+other,at,'PATCH',{status:'shipped',tracking:'QA-123'})).status,200);});
+ await t.test('admin manual orders validate totals, protect existing IDs and reject customer access',async()=>{
+ const manualId='qa_manual_'+randomUUID();const body={orderId:manualId,customerName:'QA Customer',email:'qa@example.test',productName:'Manual item',price:12.34,quantity:3,status:'confirmed',paymentStatus:'paid'};
+ assert.equal((await request('/admin/orders/manual',ut,'POST',body)).status,403);
+ assert.equal((await request('/admin/orders/manual',at,'POST',{...body,price:-1})).status,400);
+ assert.equal((await request('/admin/orders/manual',at,'POST',{...body,paymentStatus:'pending'})).status,400);
+ const r=await request('/admin/orders/manual',at,'POST',body);assert.equal(r.status,201);orderIds.push(r.body.id);assert.equal(r.body.totalPaise,3702);assert.equal(r.body.transactionId,null);
+ assert.equal((await request('/admin/orders/manual',at,'POST',body)).status,409);
+ assert.equal((await db.doc('orders/'+manualId).get()).data().totalPaise,3702);
+ });
  await t.test('unconfigured live payment and feed stay disabled',async()=>{assert.equal((await request('/orders',ut,'POST',{...payload,paymentMethod:'cashfree'},randomUUID())).status,503);assert.equal((await request('/merchant/feed.xml')).status,503);});
  } finally {if(pid)await db.doc('products/'+pid).delete();for(const oid of orderIds)await db.doc('orders/'+oid).delete();for(const user of [a,u,stranger]){await auth.deleteUser(user.uid);await db.doc('customers/'+user.uid).delete();}}
 });

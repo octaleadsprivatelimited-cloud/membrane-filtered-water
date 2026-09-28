@@ -20,12 +20,9 @@ export default function SignIn({ admin = false }) {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
-  const routeUser = (email) => {
-    if (email === 'aquasafe.ap@gmail.com') {
-      navigate('/admin/dashboard');
-    } else {
-      navigate('/account');
-    }
+  const routeUser = (profile) => {
+    if (admin && !profile?.admin) throw new Error('Administrator access required. Use your customer account page.');
+    navigate(profile?.admin ? '/admin/dashboard' : '/account');
   };
 
   async function submitGoogle() {
@@ -40,8 +37,7 @@ export default function SignIn({ admin = false }) {
       if (!existing.name && cred.user.displayName) {
         await api('/me', {method:'PUT',body:JSON.stringify({name:cred.user.displayName,addresses:existing.addresses||[]})});
       }
-      await refresh();
-      routeUser(cred.user.email);
+      routeUser(await refresh());
     } catch (err) {
       if (err.code !== 'auth/popup-closed-by-user') {
         setError(err.message.replace('Firebase: ', ''));
@@ -74,8 +70,7 @@ export default function SignIn({ admin = false }) {
         cred = await signInWithEmailAndPassword(auth, f.get('email'), f.get('password'));
       }
       
-      await refresh();
-      routeUser(cred.user.email);
+      routeUser(await refresh());
     } catch (err) {
       const credentialsError = ['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(err.code);
       setError(
