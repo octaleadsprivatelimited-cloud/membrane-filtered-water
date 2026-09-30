@@ -10,10 +10,10 @@ import {money} from '../../store/Shop';
 import Orders from '../../commerce/Orders';
 import ProductEditor from '../../commerce/ProductEditor';
 import { LayoutDashboard, Package, ShoppingCart, Users, Settings, LogOut, DollarSign, Clock, Box, Leaf, List, FileText } from 'lucide-react';
-export default function Dashboard(){const {user,ready,profile,logout,config,refreshConfig,error:authError}=useAuth();const navigate=useNavigate();const [tab,setTab]=useState('Overview');const [products,setProducts]=useState([]);const [orders,setOrders]=useState([]);const [customers,setCustomers]=useState([]);const [settings,setSettings]=useState(null);const [merchant,setMerchant]=useState(null);const [editor,setEditor]=useState(false);const [manualOrderEditor,setManualOrderEditor]=useState(false);const [selected,setSelected]=useState(null);const [query,setQuery]=useState('');const [error,setError]=useState('');const [notice,setNotice]=useState('');const [busy,setBusy]=useState(false);const load=async()=>{const [p,o,c,s,m]=await Promise.all([api('/admin/products'),api('/admin/orders'),api('/admin/customers'),api('/config'),api('/admin/merchant')]);setProducts(p);setOrders(o);setCustomers(c);setSettings(s);setMerchant(m);};useEffect(()=>{if(ready&&!user)navigate('/admin');if(ready&&user&&profile&&!profile.admin){navigate('/account');}if(profile?.admin)load().catch(e=>setError(e.message));},[ready,user,profile,navigate,logout]);if(authError)return <div className="commerce-page" role="alert">{authError} <button onClick={()=>window.location.reload()}>Retry</button></div>;if(!ready||!profile)return <p className="commerce-page" role="status">Loading administrator account…</p>;if(!profile.admin)return <p className="commerce-page" role="alert">Administrator access required. <Link to="/account">Go to your account</Link></p>;async function saveSettings(e){e.preventDefault();setBusy(true);setError('');try{await api('/admin/settings',{method:'PUT',body:JSON.stringify(settings)});setNotice('Store settings saved.');await refreshConfig();await load();}catch(e){setError(e.message);}finally{setBusy(false);}}async function exportFeed(){try{const token=await auth.currentUser.getIdToken();const r=await fetch(apiUrl('/admin/merchant/export'),{headers:{Authorization:`Bearer ${token}`}});if(!r.ok)throw new Error('Could not export feed');const url=URL.createObjectURL(await r.blob());const a=document.createElement('a');a.href=url;a.download='merchant-preview.xml';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){setError(e.message);}}
+export default function Dashboard(){const {user,ready,profile,logout,refreshConfig,error:authError}=useAuth();const navigate=useNavigate();const [tab,setTab]=useState('Overview');const [enquiries,setEnquiries]=useState([]);const [today]=useState(()=>new Date().toDateString());const [products,setProducts]=useState([]);const [orders,setOrders]=useState([]);const [customers,setCustomers]=useState([]);const [settings,setSettings]=useState(null);const [merchant,setMerchant]=useState(null);const [editor,setEditor]=useState(false);const [manualOrderEditor,setManualOrderEditor]=useState(false);const [selected,setSelected]=useState(null);const [query,setQuery]=useState('');const [error,setError]=useState('');const [notice,setNotice]=useState('');const [busy,setBusy]=useState(false);const load=async()=>{const [p,o,c,s,m,q]=await Promise.all([api('/admin/products'),api('/admin/orders'),api('/admin/customers'),api('/config'),api('/admin/merchant'),api('/admin/enquiries')]);setEnquiries(q);setProducts(p);setOrders(o);setCustomers(c);setSettings(s);setMerchant(m);};useEffect(()=>{if(ready&&!user)navigate('/admin');if(ready&&user&&profile&&!profile.admin){navigate('/account');}if(profile?.admin)load().catch(e=>setError(e.message));},[ready,user,profile,navigate,logout]);if(authError)return <div className="commerce-page" role="alert">{authError} <button onClick={()=>window.location.reload()}>Retry</button> <button onClick={logout}>Sign out</button></div>;if(!ready||!profile)return <p className="commerce-page" role="status">Loading administrator account…</p>;if(!profile.admin)return <p className="commerce-page" role="alert">Administrator access required. <Link to="/account">Go to your account</Link></p>;async function saveSettings(e){e.preventDefault();setBusy(true);setError('');try{await api('/admin/settings',{method:'PUT',body:JSON.stringify(settings)});setNotice('Store settings saved.');await refreshConfig();await load();}catch(e){setError(e.message);}finally{setBusy(false);}}async function exportFeed(){try{const token=await auth.currentUser.getIdToken();const r=await fetch(apiUrl('/admin/merchant/export'),{headers:{Authorization:`Bearer ${token}`}});if(!r.ok)throw new Error('Could not export feed');const url=URL.createObjectURL(await r.blob());const a=document.createElement('a');a.href=url;a.download='merchant-preview.xml';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){setError(e.message);}}
 const uniqueCategories = Array.from(new Set([...(settings?.categories || []), ...products.map(p => p.category).filter(Boolean)]));
-const lowStock = products.filter(p => p.stock < 5 && p.status === 'active');
-const menuItems = [{name:'Dashboard',icon:LayoutDashboard,tab:'Overview'},{name:'Categories',icon:List,tab:'Categories'},{name:'Products',icon:Package,tab:'Products'},{name:'Orders',icon:ShoppingCart,tab:'Orders'},{name:'Payments',icon:DollarSign,tab:'Payments'},{name:'Users',icon:Users,tab:'Customers'},{name:'Settings',icon:Settings,tab:'Settings'},{name:'Policies',icon:FileText,tab:'Policies'},{name:'Google Merchant',icon:Leaf,tab:'Google Merchant'}];
+
+const menuItems = [{name:'Dashboard',icon:LayoutDashboard,tab:'Overview'},{name:'Categories',icon:List,tab:'Categories'},{name:'Products',icon:Package,tab:'Products'},{name:'Orders',icon:ShoppingCart,tab:'Orders'},{name:'Payments',icon:DollarSign,tab:'Payments'},{name:'Users',icon:Users,tab:'Customers'},{name:'Settings',icon:Settings,tab:'Settings'},{name:'Policies',icon:FileText,tab:'Policies'},{name:'Enquiries',icon:FileText,tab:'Enquiries'},{name:'Google Merchant',icon:Leaf,tab:'Google Merchant'}];
 
 return <div className="admin-shell">
   <aside className="admin-sidebar">
@@ -63,7 +63,7 @@ return <div className="admin-shell">
         <article>
           <span>Total Orders <ShoppingCart size={18}/></span>
           <strong>{orders.length}</strong>
-          <span className="metric-sub warning">{orders.filter(o=>new Date(o.createdAt) > new Date(Date.now()-86400000)).length} orders today</span>
+          <span className="metric-sub warning">{orders.filter(o=>new Date(o.createdAt).toDateString()===today).length} orders today</span>
         </article>
         <article>
           <span>Total Customers <Users size={18}/></span>
@@ -169,13 +169,13 @@ return <div className="admin-shell">
                  <option value="processing">Processing</option>
                  <option value="shipped">Shipped</option>
                  <option value="delivered">Delivered</option>
-               </select>
+               </select><details><summary>Order details & tracking</summary><Orders orders={[o]} reload={load} admin/></details>
              </label>
              <label>Payment Status
                <select name="paymentStatus" defaultValue="paid">
                  <option value="paid">Paid (recorded manually)</option>
                  <option value="pending">Pending</option>
-               </select>
+               </select><details><summary>Order details & tracking</summary><Orders orders={[o]} reload={load} admin/></details>
              </label>
           </div>
           <div className="commerce-modal-actions">
@@ -205,7 +205,7 @@ return <div className="admin-shell">
                }}>
                   <option value={o.status}>{o.status.replaceAll('_',' ')}</option>
                   {{confirmed:'processing',processing:'shipped',shipped:'delivered'}[o.status]&&<option value={{confirmed:'processing',processing:'shipped',shipped:'delivered'}[o.status]}>{{confirmed:'processing',processing:'shipped',shipped:'delivered'}[o.status]}</option>}
-               </select>
+               </select><details><summary>Order details & tracking</summary><Orders orders={[o]} reload={load} admin/></details>
              </td>
            </tr>
         ))}
@@ -215,7 +215,8 @@ return <div className="admin-shell">
   </div>
 </>}
 {tab==='Payments'&&<PaymentCenter orders={orders} reload={load} admin/>}
-{tab==='Customers'&&<div className="commerce-table-wrap"><table className="commerce-table"><thead><tr><th>Name</th><th>Email</th><th>Joined</th><th>Orders</th></tr></thead><tbody>{customers.map(c=><tr key={c.id}><td>{c.name||'—'}</td><td>{c.email}</td><td>{c.createdAt?new Date(c.createdAt).toLocaleDateString():'—'}</td><td>{orders.filter(o=>o.uid===c.id).length}</td></tr>)}</tbody></table></div>}
+{tab==='Enquiries'&&<section><h2>Customer support inbox</h2>{enquiries.map(q=><article className="commerce-panel" key={q.id}><div className="commerce-inline"><strong>{q.subject}</strong><span className="commerce-badge">{q.status}</span></div><p>{q.name} · {q.email} · {q.phone}</p><p style={{whiteSpace:'pre-wrap'}}>{q.message}</p><small>{new Date(q.createdAt).toLocaleString()}</small><button className="store-pill" disabled={busy} onClick={async()=>{setBusy(true);try{await api(`/admin/enquiries/${q.id}`,{method:'PATCH',body:JSON.stringify({status:q.status==='open'?'resolved':'open'})});await load();}catch(e){setError(e.message);}finally{setBusy(false);}}}>{q.status==='open'?'Mark resolved':'Reopen'}</button></article>)}{!enquiries.length&&<p>No enquiries yet.</p>}</section>}
+{tab==='Customers' &&<div className="commerce-table-wrap"><table className="commerce-table"><thead><tr><th>Name</th><th>Email</th><th>Joined</th><th>Orders</th></tr></thead><tbody>{customers.map(c=><tr key={c.id}><td>{c.name||'—'}</td><td>{c.email}</td><td>{c.createdAt?new Date(c.createdAt).toLocaleDateString():'—'}</td><td>{orders.filter(o=>o.uid===c.id).length}</td></tr>)}</tbody></table></div>}
 {tab==='Google Merchant'&&<><section className="commerce-panel"><h2>Product feed readiness</h2><p>Status: {merchant?.enabled?'Live publication enabled':'Not published'}. A public HTTPS domain, real product photos, valid identifiers, policies and live checkout are needed before submission. Google approval is not automatic.</p><p><code>{merchant?.feedUrl}</code></p><button className="store-pill" onClick={exportFeed}>Download eligible-product XML preview</button><p className="commerce-note">An empty preview means no products currently pass the readiness checks. Add this feed in Merchant Center only after deployment and account verification.</p></section>{merchant?.products.map(p=><article className="commerce-panel" key={p.id}><strong>{p.name}</strong>{p.issues.length?<ul>{p.issues.map(i=><li key={i}>• {i}</li>)}</ul>:<p>Ready for the feed.</p>}</article>)}</>}
 {tab==='Categories' && settings && (
       <div className="commerce-panel">

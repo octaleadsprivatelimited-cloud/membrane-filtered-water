@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {mysqlOptions} from '../server/mysql-config.mjs';
+test('Hostinger separate variables preserve raw password characters',()=>{const c=mysqlOptions({DB_HOST:'localhost',DB_USER:'u_store',DB_NAME:'u_store',DB_PASSWORD:'p@ss:#/word'});assert.equal(c.password,'p@ss:#/word');assert.equal(c.port,3306);assert.equal(c.database,'u_store');});
+test('URL aliases and verified TLS options',()=>{const c=mysqlOptions({DATABASE_URL:'mysql://user:p%40ss@localhost:3307/store',DB_SSL:'true'});assert.equal(c.password,'p@ss');assert.equal(c.port,3307);assert.equal(c.ssl.rejectUnauthorized,true);});
+test('configuration errors never echo database secrets',()=>{for(const env of [{},{MYSQL_URL:'mysql://secret'},{DATABASE_URL:'postgres://u:secret@localhost/db'},{DB_HOST:'localhost',DB_USER:'u',DB_PASSWORD:'secret',DB_NAME:'db',DB_PORT:'NaN'}])assert.throws(()=>mysqlOptions(env),e=>e.code==='DATABASE_CONFIGURATION'&&!e.message.includes('secret'));});

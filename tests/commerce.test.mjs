@@ -6,10 +6,33 @@ import {randomUUID,createHmac} from 'node:crypto';
 import {auth,emulator} from '../server/firebase.mjs';
 import {merchantIssues,merchantFeed,validGtin} from '../server/merchant.mjs';
 import {verifyWebhook} from '../server/cashfree.mjs';
+import {googleToken,emulatorSignIn} from './helpers/google-auth.mjs';
 if(!emulator)throw new Error('Integration tests are emulator-only');
 const base='http://127.0.0.1:8787/api';
 async function request(path,token,method='GET',body,key){const r=await fetch(base+path,{method,headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`} : {}),...(key?{'Idempotency-Key':key}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,body:await r.json()};}
-async function login(user){const custom=await auth.createCustomToken(user.uid);const r=await fetch('http://127.0.0.1:9199/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=demo-key',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:custom,returnSecureToken:true})});return (await r.json()).idToken;}
+const login=googleToken;
+test('Google sign-in preserves user identity and rejects password/custom-token sessions',async()=>{
+ const password=`qa-${randomUUID()}`;
+ const user=await auth.createUser({email:`qa-auth-${randomUUID()}@example.test`,password,emailVerified:true,displayName:'Existing customer'});
+ const ref=db.doc('customers/'+user.uid);
+ try{
+  await ref.set({email:user.email,name:'Saved customer',addresses:[],createdAt:'2026-01-01T00:00:00.000Z'});
+  const passwordToken=await emulatorSignIn('signInWithPassword',{email:user.email,password});
+  const google=await googleToken(user);
+  const profile=await request('/me',google);
+  assert.equal(profile.status,200);assert.equal(profile.body.uid,user.uid);assert.equal(profile.body.name,'Saved customer');assert.equal(profile.body.admin,false);
+  await auth.setCustomUserClaims(user.uid,{admin:true});
+  const custom=await emulatorSignIn('signInWithCustomToken',{token:await auth.createCustomToken(user.uid)});
+  for(const token of [passwordToken,custom]){
+   for(const path of ['/me','/admin/orders']){
+    const denied=await request(path,token);assert.equal(denied.status,401);assert.equal(denied.body.code,'GOOGLE_SIGN_IN_REQUIRED');
+   }
+  }
+  const adminGoogle=await googleToken(user);
+  assert.equal((await request('/me',adminGoogle)).body.admin,true);
+  assert.equal((await request('/admin/orders',adminGoogle)).status,200);
+ }finally{await ref.delete();await auth.deleteUser(user.uid);}
+});
 test('commerce security, inventory and lifecycle',async t=>{
  const a=await auth.createUser({email:`qa-admin-${randomUUID()}@example.test`});await auth.setCustomUserClaims(a.uid,{admin:true});const u=await auth.createUser({email:`qa-customer-${randomUUID()}@example.test`});const stranger=await auth.createUser({email:`qa-other-${randomUUID()}@example.test`});const at=await login(a),ut=await login(u),st=await login(stranger);let pid;const orderIds=[];
  try {
@@ -32,6 +55,10 @@ test('commerce security, inventory and lifecycle',async t=>{
  const r=await request('/admin/orders/manual',at,'POST',body);assert.equal(r.status,201);orderIds.push(r.body.id);assert.equal(r.body.totalPaise,3702);assert.equal(r.body.transactionId,null);
  assert.equal((await request('/admin/orders/manual',at,'POST',body)).status,409);
  assert.equal((await db.doc('orders/'+manualId).get()).data().totalPaise,3702);
+ });
+ await t.test('contact enquiry is stored, admin-only and can be resolved',async()=>{
+ const r=await request('/enquiries',null,'POST',{firstName:'QA',lastName:'Customer',email:'qa@example.test',subject:'Test service request',message:'Please test the support inbox.'});assert.equal(r.status,201);
+ try{assert.equal((await request('/admin/enquiries',ut)).status,403);assert.ok((await request('/admin/enquiries',at)).body.some(q=>q.id===r.body.id));assert.equal((await request('/admin/enquiries/'+r.body.id,at,'PATCH',{status:'resolved'})).status,200);assert.equal((await db.doc('enquiries/'+r.body.id).get()).data().status,'resolved');}finally{await db.doc('enquiries/'+r.body.id).delete();}
  });
  await t.test('unconfigured live payment and feed stay disabled',async()=>{assert.equal((await request('/orders',ut,'POST',{...payload,paymentMethod:'cashfree'},randomUUID())).status,503);assert.equal((await request('/merchant/feed.xml')).status,503);});
  } finally {if(pid)await db.doc('products/'+pid).delete();for(const oid of orderIds)await db.doc('orders/'+oid).delete();for(const user of [a,u,stranger]){await auth.deleteUser(user.uid);await db.doc('customers/'+user.uid).delete();}}

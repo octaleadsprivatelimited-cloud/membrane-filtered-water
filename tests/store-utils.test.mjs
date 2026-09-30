@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {normalizeCart} from '../src/store/cart.js';import {totals} from '../src/shared/pricing.js';
+test('cart restores only valid unique lines and bounds quantities',()=>{assert.deepEqual(normalizeCart({}),[]);assert.deepEqual(normalizeCart([null,{id:'a',name:'A',price:12,quantity:1000},{id:'a',name:'A',price:12,quantity:1},{id:'b',name:'B',price:2,quantity:-1}]),[{id:'a',name:'A',price:12,quantity:99}]);});
+test('shared pricing preserves zero shipping and rounds GST consistently',()=>{const items=[{price:12.35,quantity:3,gst:18}];assert.deepEqual(totals(items,{city:'Delhi',pincode:'110001'},{shippingFee:0}),{subtotalPaise:3705,gstPaise:667,shippingPaise:0,totalPaise:4372});assert.equal(totals(items,{city:'Test',pincode:'560001'},{shippingFee:2}).shippingPaise,200000);assert.equal(totals(items,{city:'Test',pincode:'560001'},{shippingFee:2,freeShippingAbove:30}).shippingPaise,0);});

@@ -1,15 +1,19 @@
+import {totals} from '../src/shared/pricing.js';
 import {registerOrderService} from './order-service.mjs';
 import appConfig from '../src/config/appConfig.js';
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { randomUUID, createHash } from 'node:crypto';
 import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import { auth, emulator, assertFirebaseReady } from './firebase.mjs';
 import { merchantFeed, merchantIssues, publicHttps, validGtin } from './merchant.mjs';
 import { cashfree, cashfreeReady, paymentMode, verifyWebhook } from './cashfree.mjs';
 import {db,assertDatabaseReady,databaseDriver} from './database.mjs';
 const app=express();
+const distDirectory=fileURLToPath(new URL('../dist/',import.meta.url));
+if(process.env.TRUST_PROXY)app.set('trust proxy',process.env.TRUST_PROXY);
+
 app.disable('x-powered-by');
 app.use('/api',async(req,res,next)=>{try{assertFirebaseReady();await assertDatabaseReady();next();}catch(error){next(error);}});
 const fail=(message,status=400)=>{const e=new Error(message);e.status=status;throw e;};
@@ -19,11 +23,12 @@ const settingsDefault={siteUrl:appConfig.frontendUrl,shippingFee:0,freeShippingA
 const getSettings=async()=>({...settingsDefault,...(await db.doc('settings/store').get()).data()});
 const all=async(collection)=>(await db.collection(collection).get()).docs.map(d=>({...d.data(),id:d.id}));
 const int=(v,min=0,max=1000000)=>Number.isInteger(Number(v))&&Number(v)>=min&&Number(v)<=max?Number(v):fail('Invalid quantity');
-async function authenticated(req,res,next){try{const token=(req.headers.authorization||'').replace(/^Bearer /,'');if(!token)fail('Please sign in',401);req.user=await auth.verifyIdToken(token,true);next();}catch(error){if(error.status===401||['auth/argument-error','auth/id-token-expired','auth/id-token-revoked','auth/invalid-id-token','auth/user-disabled','auth/user-not-found'].includes(error.code))return res.status(401).json({error:'Please sign in again.'});console.error('Token verification unavailable:',error.code||error.message);res.status(503).json({error:'Account verification is temporarily unavailable. Please try again shortly.'});}}
+async function authenticated(req,res,next){try{const token=(req.headers.authorization||'').replace(/^Bearer /,'');if(!token)fail('Please sign in',401);req.user=await auth.verifyIdToken(token,true);if(req.user.firebase?.sign_in_provider!=='google.com')return res.status(401).json({error:'Please sign in with Google to continue.',code:'GOOGLE_SIGN_IN_REQUIRED'});next();}catch(error){if(error.status===401||['auth/argument-error','auth/id-token-expired','auth/id-token-revoked','auth/invalid-id-token','auth/user-disabled','auth/user-not-found'].includes(error.code))return res.status(401).json({error:'Please sign in again.'});console.error('Token verification unavailable:',error.code||error.message);res.status(503).json({error:'Account verification is temporarily unavailable. Please try again shortly.'});}}
 const admin=(req,res,next)=>(req.user.admin===true || (req.user.email_verified===true&&req.user.email === 'aquasafe.ap@gmail.com'))?next():res.status(403).json({error:'Administrator access required.'});
 function address(v){if(!v||typeof v!=='object')fail('Address required');const a={name:text(v.name,100),phone:text(v.phone,20),line1:text(v.line1,200),city:text(v.city,80),state:text(v.state,80),pincode:text(v.pincode,6)};if(Object.values(a).some(x=>!x)||!/^\d{6}$/.test(a.pincode)||!/^\+?[\d\s-]{10,16}$/.test(a.phone))fail('Complete a valid Indian address and phone number.');return a;}
 function product(v,existing={}){
  const p={...existing,name:text(v.name,150),sku:text(v.sku,50)||`SKU-${Date.now()}`,category:text(v.category,100),description:text(v.description,5000),price:Number(v.price),originalPrice:Number(v.originalPrice||v.price),gst:Number(v.gst)||0,stock:int(v.stock),image:text(v.image,2000000),images:Array.isArray(v.images)?v.images.map(x=>text(x,2000000)).filter(Boolean).slice(0,10):[],brand:text(v.brand,100),gtin:text(v.gtin,14),mpn:text(v.mpn,100),features:Array.isArray(v.features)?v.features.map(x=>text(x,200)).filter(Boolean).slice(0,12):[],status:['draft','active','archived'].includes(v.status)?v.status:'draft',condition:['new','used','refurbished'].includes(v.condition)?v.condition:'new',identifiersExist:v.identifiersExist!==false,merchantEnabled:v.merchantEnabled===true,demo:v.demo===true,updatedAt:new Date().toISOString()};
+ if(!Number.isFinite(p.gst)||p.gst<0||p.gst>100)fail('GST must be between 0 and 100.');
  if(!p.name||!p.description||!Number.isFinite(p.price)||p.price<=0||p.price>10000000||!Number.isFinite(p.originalPrice)||p.originalPrice<p.price)fail('Title, description and valid prices are required.');
  if(p.image&&!/^https?:\/\//.test(p.image)&&!/^\/[\w./-]+$/.test(p.image)&&!/^data:image\//.test(p.image))fail('Use a valid image URL, local asset path, or base64 image.');
  if(p.gtin&&!validGtin(p.gtin))fail('Invalid GTIN checksum.');
@@ -42,6 +47,7 @@ app.post('/api/payments/cashfree/webhook',express.raw({type:'application/json',l
 app.use('/api',rateLimit({windowMs:60_000,limit:emulator?1000:180,standardHeaders:'draft-8',legacyHeaders:false,message:{error:'Too many requests. Please try again shortly.'}}));
 app.use(express.json({limit:'1mb'}));
 app.use((req,res,next)=>{res.set('X-Content-Type-Options','nosniff');if(req.path.startsWith('/api/'))res.set('Cache-Control','no-store');if(!['GET','HEAD','OPTIONS'].includes(req.method)&&req.headers.origin){const sameOrigin=req.headers.origin===`${emulator?'http':'https'}://${req.headers.host}`;const allowed=[(process.env.PUBLIC_STORE_URL||appConfig.frontendUrl).replace(/\/$/,''), ...(process.env.VERCEL_URL?[`https://${process.env.VERCEL_URL}`]:[]), ...(process.env.VERCEL_PROJECT_PRODUCTION_URL?[`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]:[]), ...(process.env.VERCEL?[]:['http://127.0.0.1:5173','http://localhost:5173','http://127.0.0.1:5174','http://localhost:5174'])].filter(Boolean);if(!sameOrigin&&!allowed.includes(req.headers.origin))return res.status(403).json({error:'Origin not allowed'});}next();});
+app.get('/api/health',async(req,res)=>{try{if(databaseDriver==='mysql')await db.health();res.json({status:'ok',database:databaseDriver});}catch{res.status(503).json({error:'Database is unavailable',code:'DATABASE_UNAVAILABLE'});}});
 app.get('/api/config',async(req,res)=>res.json({emulator,database:databaseDriver,paymentMode:cashfreeReady()?paymentMode():'disabled',...await getSettings()}));
 app.get('/api/products',async(req,res)=>res.json((await all('products')).filter(p=>p.status==='active')));
 app.get('/api/products/:id',async(req,res)=>{const s=await db.doc(`products/${id(req.params.id)}`).get();if(!s.exists||s.data().status!=='active')fail('Product not found',404);res.json({...s.data(),id:s.id});});
@@ -58,26 +64,8 @@ app.post('/api/orders',authenticated,async(req,res)=>{
  const result=await db.runTransaction(async tx=>{
  const prior=await tx.get(ref);if(prior.exists){if(prior.data().requestHash!==requestHash)fail('Checkout request changed. Refresh and try again.',409);return prior.data();}
  const refs=[...grouped.keys()].map(pid=>db.doc(`products/${pid}`));const docs=await tx.getAll(...refs);const items=docs.map(d=>{const p=d.data();const quantity=grouped.get(d.id);if(!p||p.status!=='active'||p.stock<quantity)fail(`${p?.name||'Product'} is unavailable or has insufficient stock.`,409);return{id:d.id,name:p.name,price:p.price,quantity,gst:p.gst||0,image:p.image};});
- const subtotalPaise=items.reduce((n,p)=>n+Math.round(p.price*100)*p.quantity,0);
- const gstPaise=items.reduce((n,p)=>n+Math.round(p.price*p.quantity*p.gst),0);
- 
- const isVizag = shipping.city.toLowerCase().includes('vizag') || shipping.city.toLowerCase().includes('visakha') || shipping.pincode.startsWith('530') || shipping.pincode.startsWith('531');
- let shippingPaise = 0;
- if(!isVizag){
-   const s = shipping.pincode.substring(0,2);
-   let km = 1500;
-   if(['51','52','53'].includes(s)) km = 300;
-   else if(s==='50') km = 600;
-   else if(['75','76','77'].includes(s)) km = 400;
-   else if(['60','61','62','63','64'].includes(s)) km = 800;
-   else if(['56','57','58','59'].includes(s)) km = 1000;
-   else if(['40','41','42','43','44'].includes(s)) km = 1200;
-   shippingPaise = km * (settings.shippingFee || 2) * 100;
- }
- if(settings.freeShippingAbove>0&&subtotalPaise>=settings.freeShippingAbove*100) shippingPaise=0;
-
- if(method==='cashfree'&&subtotalPaise+shippingPaise+gstPaise<100)fail('Cashfree requires an order total of at least ₹1.');
- const totalPaise = subtotalPaise + gstPaise + shippingPaise;
+ const {subtotalPaise,gstPaise,shippingPaise,totalPaise}=totals(items,shipping,settings);
+ if(method==='cashfree'&&totalPaise<100)fail('Cashfree requires an order total of at least ₹1.');
  const order={id:orderId,uid:req.user.uid,email:req.user.email||'',items,address:shipping,subtotalPaise,shippingPaise,gstPaise,totalPaise,currency:'INR',paymentMethod:method,paymentStatus:method==='demo'?'demo':'pending',status:method==='demo'?'confirmed':'pending_payment',createdAt:new Date().toISOString(),requestHash,tracking:'',paymentKey:randomUUID()};
  docs.forEach(d=>tx.update(d.ref,{stock:d.data().stock-grouped.get(d.id)}));tx.create(ref,order);return order;
  });res.status(201).json(result);
@@ -90,9 +78,16 @@ app.post('/api/orders/:id/payment',authenticated,async(req,res)=>{
 });
 app.post('/api/orders/:id/verify',authenticated,async(req,res)=>{const s=await db.doc(`orders/${id(req.params.id)}`).get();if(!s.exists||s.data().uid!==req.user.uid)fail('Order not found',404);if(s.data().paymentMethod!=='cashfree')fail('Not a Cashfree order');res.json(await settlePayment(s.id));});
 async function cancel(orderId,uid,isAdmin){
- const ref=db.doc(`orders/${id(orderId)}`);await db.runTransaction(async tx=>{const s=await tx.get(ref);if(!s.exists||(!isAdmin&&s.data().uid!==uid))fail('Order not found',404);const o=s.data();if(o.status==='cancelled')return;if(!['confirmed','pending_payment','processing'].includes(o.status))fail('Order cannot be cancelled at this stage',409);if(o.paymentMethod==='cashfree')fail('Cashfree orders require payment reconciliation and a provider refund before cancellation. Contact support.',409);const docs=await tx.getAll(...o.items.map(i=>db.doc(`products/${i.id}`)));docs.forEach((d,i)=>{if(d.exists)tx.update(d.ref,{stock:d.data().stock+o.items[i].quantity});});tx.update(ref,{status:'cancelled',cancelledAt:new Date().toISOString()});});}
+ const ref=db.doc(`orders/${id(orderId)}`);await db.runTransaction(async tx=>{const s=await tx.get(ref);if(!s.exists||(!isAdmin&&s.data().uid!==uid))fail('Order not found',404);const o=s.data();if(o.status==='cancelled')return;if(!['confirmed','pending_payment','processing'].includes(o.status))fail('Order cannot be cancelled at this stage',409);if(o.paymentMethod!=='demo')fail('Cashfree orders require payment reconciliation and a provider refund before cancellation. Contact support.',409);const docs=await tx.getAll(...o.items.map(i=>db.doc(`products/${i.id}`)));docs.forEach((d,i)=>{if(d.exists)tx.update(d.ref,{stock:d.data().stock+o.items[i].quantity});});tx.update(ref,{status:'cancelled',cancelledAt:new Date().toISOString()});});}
 app.post('/api/orders/:id/cancel',authenticated,async(req,res)=>{await cancel(req.params.id,req.user.uid,req.user.admin===true||(req.user.email_verified===true&&req.user.email==='aquasafe.ap@gmail.com'));res.json({ok:true});});
+app.post('/api/enquiries',rateLimit({windowMs:60_000,limit:10,standardHeaders:'draft-8',legacyHeaders:false,message:{error:'Please wait before sending another enquiry.'}}),async(req,res)=>{
+ const b=req.body||{};const data={name:text([b.firstName,b.lastName].filter(Boolean).join(' '),150),email:text(b.email,200),phone:text(b.phone,30),subject:text(b.subject,200),message:text(b.message,5000),status:'open',createdAt:new Date().toISOString()};
+ if(!data.name||!/^\S+@\S+\.\S+$/.test(data.email)||!data.subject||data.message.length<5)fail('Enter your name, valid email, subject and message.',400);
+ const ref=db.collection('enquiries').doc();await ref.set({...data,id:ref.id});res.status(201).json({id:ref.id});
+});
 app.use('/api/admin',authenticated,admin);
+app.get('/api/admin/enquiries',async(req,res)=>res.json((await all('enquiries')).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))));
+app.patch('/api/admin/enquiries/:id',async(req,res)=>{if(!['open','resolved'].includes(req.body.status))fail('Invalid enquiry status');const ref=db.doc(`enquiries/${id(req.params.id)}`);await db.runTransaction(async tx=>{if(!(await tx.get(ref)).exists)fail('Enquiry not found',404);tx.update(ref,{status:req.body.status,updatedAt:new Date().toISOString()});});res.json({ok:true});});
 registerOrderService(app,{db,authenticated,admin});
 app.get('/api/admin/products',async(req,res)=>res.json(await all('products')));
 app.post('/api/admin/products',async(req,res)=>{const p=product(req.body);const ref=db.collection('products').doc();await ref.set({...p,id:ref.id,createdAt:new Date().toISOString()});res.status(201).json({...p,id:ref.id});});
@@ -113,7 +108,7 @@ app.post('/api/admin/orders/manual',async(req,res)=>{
  res.status(201).json(order);
 });
 app.get('/api/admin/orders',async(req,res)=>res.json((await all('orders')).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))));
-app.patch('/api/admin/orders/:id',async(req,res)=>{const ref=db.doc(`orders/${id(req.params.id)}`);const next=req.body.status;await db.runTransaction(async tx=>{const s=await tx.get(ref);if(!s.exists)fail('Order not found',404);if((s.data().serviceRequests||[]).some(r=>r.type==='cancellation'&&r.status==='requested'))fail('Review the cancellation request before fulfillment.',409);const current=s.data().status;const transitions={confirmed:['processing'],processing:['shipped'],shipped:['delivered']};if(next!==current&&!transitions[current]?.includes(next))fail('Invalid order status transition',409); tx.update(ref,{status:text(next,50),tracking:text(req.body.tracking,200),updatedAt:new Date().toISOString()});});res.json({ok:true});});
+app.patch('/api/admin/orders/:id',async(req,res)=>{const ref=db.doc(`orders/${id(req.params.id)}`);const next=req.body.status;await db.runTransaction(async tx=>{const s=await tx.get(ref);if(!s.exists)fail('Order not found',404);if((s.data().serviceRequests||[]).some(r=>r.type==='cancellation'&&r.status==='requested'))fail('Review the cancellation request before fulfillment.',409);if(!['paid','demo'].includes(s.data().paymentStatus))fail('Payment must be confirmed before fulfillment.',409);const current=s.data().status;const transitions={confirmed:['processing'],processing:['shipped'],shipped:['delivered']};if(next!==current&&!transitions[current]?.includes(next))fail('Invalid order status transition',409); tx.update(ref,{status:text(next,50),tracking:text(req.body.tracking,200),updatedAt:new Date().toISOString()});});res.json({ok:true});});
 app.get('/api/admin/customers',async(req,res)=>res.json(await all('customers')));
 app.put('/api/admin/settings',async(req,res)=>{const b=req.body;const siteUrl=text(b.siteUrl,500).replace(/\/$/,'');if(siteUrl&&!publicHttps(siteUrl))fail('Use a public HTTPS domain');
 const s={siteUrl,shippingFee:Number(b.shippingFee),freeShippingAbove:Number(b.freeShippingAbove),supportEmail:text(b.supportEmail,200),businessName:text(b.businessName,150),merchantLive:b.merchantLive===true,
@@ -126,7 +121,7 @@ app.get('/api/admin/merchant',async(req,res)=>{const settings=await getSettings(
 app.get('/api/admin/merchant/export',async(req,res)=>res.type('application/xml').attachment('merchant-preview.xml').send(merchantFeed(await all('products'),await getSettings())));
 app.get('/api/merchant/feed.xml',async(req,res)=>{const s=await getSettings();if(!s.merchantLive||emulator||!cashfreeReady()||paymentMode()!=='production')fail('Merchant feed is not published yet',503);res.type('application/xml').send(merchantFeed(await all('products'),s));});
 app.use('/api',(req,res)=>res.status(404).json({error:'Endpoint not found'}));
-app.use(express.static(resolve('dist')));
-app.get('/{*path}',(req,res)=>res.sendFile(resolve('dist/index.html')));
-app.use((err,req,res,_next)=>{const configCode=typeof err.code==='string'&&(err.code.startsWith('FIREBASE_')||err.code==='DATABASE_UNAVAILABLE')?err.code:undefined;console.error(configCode||'API_ERROR',err.message);res.status(err.status||500).json({error:err.status?err.message:'Something went wrong. Please retry.',...(configCode?{code:configCode}:{})});});
+app.use(express.static(distDirectory));
+app.get('/{*path}',(req,res)=>res.sendFile(resolve(distDirectory,'index.html')));
+app.use((err,req,res,_next)=>{const configCode=typeof err.code==='string'&&(err.code.startsWith('FIREBASE_')||err.code.startsWith('DATABASE_'))?err.code:undefined;console.error(configCode||'API_ERROR',err.message);res.status(err.status||500).json({error:err.status?err.message:'Something went wrong. Please retry.',...(configCode?{code:configCode}:{})});});
 export default app; if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).href) { const port=Number(process.env.PORT||8787);app.listen(port,emulator?'127.0.0.1':'0.0.0.0',()=>console.log(`Store API on ${port}; Firebase ${emulator?'EMULATOR':'LIVE'}; Cashfree ${paymentMode()}`)); }

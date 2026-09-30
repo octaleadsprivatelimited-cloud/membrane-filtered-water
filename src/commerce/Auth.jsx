@@ -1,5 +1,5 @@
 import {createContext,useContext,useEffect,useRef,useState,useCallback} from 'react';
-import {onIdTokenChanged,signOut} from 'firebase/auth';
+import {getIdTokenResult,onIdTokenChanged,signOut} from 'firebase/auth';
 import {auth} from '../firebase/config';
 import {api} from './api';
 const Context=createContext(null);
@@ -13,6 +13,11 @@ export function AuthProvider({children}) {
   setError('');
   if(!current){setProfile(null);return null;}
   try {
+   const token=await getIdTokenResult(current);
+   if(token.signInProvider!=='google.com'){
+    if(auth.currentUser?.uid===current.uid)await signOut(auth);
+    return null;
+   }
    const next=await api('/me');
    if(request===generation.current&&auth.currentUser?.uid===current.uid){setProfile(next);setError('');}
    return next;

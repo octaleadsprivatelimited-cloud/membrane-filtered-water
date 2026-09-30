@@ -2,7 +2,7 @@ import {createPrivateKey} from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import appConfig from '../src/config/appConfig.js';
-import {initializeApp,cert,applicationDefault} from 'firebase-admin/app';
+import {initializeApp,cert} from 'firebase-admin/app';
 import {getAuth} from 'firebase-admin/auth';
 import {getFirestore} from 'firebase-admin/firestore';
 import {parseServiceAccount} from './service-account.mjs';
@@ -25,7 +25,9 @@ try {
   let usingFile = false;
   
   if (!accountRaw) {
-    const filePath = path.resolve(process.cwd(), 'service-account.json');
+    const filePath = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.resolve(process.cwd(), 'service-account.json');
+    configurationCode='FIREBASE_CREDENTIAL_FILE';
+    if(process.env.GOOGLE_APPLICATION_CREDENTIALS&&!fs.existsSync(filePath))throw new Error('The configured Firebase credential file is unavailable.');
     if (fs.existsSync(filePath)) {
       accountRaw = fs.readFileSync(filePath, 'utf8');
       usingFile = true;
@@ -35,7 +37,7 @@ try {
   if(accountRaw){
    let account;
    configurationCode=usingFile ? 'FIREBASE_SERVICE_ACCOUNT_FILE_JSON' : 'FIREBASE_SERVICE_ACCOUNT_JSON';
-   try{account=parseServiceAccount(accountRaw);}catch{throw new Error(usingFile ? 'service-account.json must be valid JSON.' : 'FIREBASE_SERVICE_ACCOUNT must be valid JSON.');}
+   try{account=parseServiceAccount(accountRaw);}catch{throw new Error(usingFile ? 'The Firebase credential file must be valid JSON.' : 'FIREBASE_SERVICE_ACCOUNT must be valid JSON.');}
    configurationCode='FIREBASE_CREDENTIAL_FIELDS';
    if(!account.project_id||typeof account.client_email!=='string'||typeof account.private_key!=='string')throw new Error('Service account requires project_id, client_email and private_key fields.');
    configurationCode='FIREBASE_PROJECT_MISMATCH';
@@ -48,8 +50,7 @@ try {
    credential=cert(account);
   }else{
    configurationCode='FIREBASE_SERVICE_ACCOUNT_MISSING';
-   if(process.env.VERCEL&&!process.env.GOOGLE_APPLICATION_CREDENTIALS)throw new Error('Please add service-account.json to the repository or configure FIREBASE_SERVICE_ACCOUNT.');
-   credential=applicationDefault();
+   throw new Error('Configure FIREBASE_SERVICE_ACCOUNT securely in the server environment. Never commit credentials.');
   }
   configurationCode='FIREBASE_INITIALIZATION_FAILED';
   app=initializeApp({projectId,credential});
@@ -59,4 +60,4 @@ export function assertFirebaseReady(){
  if(initializationError){const error=new Error('Store account services are not configured. Please contact support.');error.status=503;error.code=configurationCode;throw error;}
 }
 export const auth=app?getAuth(app):null;
-export const db=app?getFirestore(app):null;
+export const db=app&&process.env.DATABASE_DRIVER==='firestore'?getFirestore(app):null;

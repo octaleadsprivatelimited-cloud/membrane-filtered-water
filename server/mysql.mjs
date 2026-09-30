@@ -3,9 +3,9 @@ import {randomUUID} from 'node:crypto';
 
 // Preserve the store's document data shape in dedicated MySQL tables.
 // Every write uses the same InnoDB lock, including stock changes and order creation.
-const tables = new Set(['products', 'customers', 'orders', 'settings']);
-export function createMysqlStore(url) {
- const pool = mysql.createPool({uri:url, connectionLimit:8, maxIdle:0, idleTimeout:1000});
+const tables = new Set(['products', 'customers', 'orders', 'settings', 'enquiries']);
+export function createMysqlStore(connection) {
+ const pool = mysql.createPool(typeof connection==='string'?{uri:connection,connectionLimit:5,maxIdle:0,idleTimeout:1000}:connection);
  let ready;
  const initialize = () => ready ||= (async () => {
   for (const table of tables) await pool.query(`CREATE TABLE IF NOT EXISTS \`${table}\` (id VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin PRIMARY KEY, data JSON NOT NULL) ENGINE=InnoDB`);
@@ -63,5 +63,5 @@ export function createMysqlStore(url) {
    limit:n=>{if(!Number.isInteger(n)||n<1)throw new Error('Invalid limit');return collection(table,filter,n);},
    get:async()=>{await initialize();const [rows]=await pool.execute(`SELECT id,data FROM \`${table}\`${filter?" WHERE JSON_UNQUOTE(JSON_EXTRACT(data, '$.uid'))=?":''}${limit?` LIMIT ${limit}`:''}`,filter?[filter.value]:[]);return {empty:rows.length===0,docs:rows.map(row=>snapshot(doc(`${table}/${row.id}`),[row]))};}};
  };
- return {doc,collection,runTransaction,initialize,close:()=>pool.end()};
+ return {doc,collection,runTransaction,initialize,health:async()=>{await initialize();await pool.query('SELECT 1');},close:()=>pool.end()};
 }

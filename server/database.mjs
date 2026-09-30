@@ -1,9 +1,14 @@
 import {db as firestore} from './firebase.mjs';
 import {createMysqlStore} from './mysql.mjs';
-export const databaseDriver=process.env.DATABASE_DRIVER||'firestore';
-if(!['mysql','firestore'].includes(databaseDriver))throw new Error('Unsupported DATABASE_DRIVER');
-if(databaseDriver==='mysql'&&!process.env.MYSQL_URL)throw new Error('MYSQL_URL is required for the MySQL database');
-export const db=databaseDriver==='mysql'?createMysqlStore(process.env.MYSQL_URL):firestore;
+import {mysqlOptions} from './mysql-config.mjs';
+export const databaseDriver=process.env.DATABASE_DRIVER||'mysql';
+let store,configurationError;
+try{
+ if(!['mysql','firestore'].includes(databaseDriver))throw new Error('Unsupported DATABASE_DRIVER. Use mysql.');
+ store=databaseDriver==='mysql'?createMysqlStore(mysqlOptions()):firestore;
+}catch(error){configurationError=error;}
+export const db=store;
 export async function assertDatabaseReady(){
- if(databaseDriver==='mysql')try{await db.initialize();}catch{const error=new Error('Store database is unavailable. Check the MySQL server and connection settings.');error.status=503;error.code='DATABASE_UNAVAILABLE';throw error;}
+ if(configurationError)throw Object.assign(new Error(configurationError.message),{status:503,code:'DATABASE_CONFIGURATION'});
+ if(databaseDriver==='mysql')try{await db.initialize();}catch(error){console.error('MySQL connection failed:',error.code||'DATABASE_ERROR');throw Object.assign(new Error('Store database is unavailable. Check the MySQL server and connection settings.'),{status:503,code:'DATABASE_UNAVAILABLE'});}
 }

@@ -2,8 +2,9 @@ import appConfig, {apiUrl} from '../config/appConfig';
 import { readApiResponse } from './response';
 import { auth } from '../firebase/config';
 export async function api(path, options={}) {
- await auth.authStateReady();
- const token=await auth.currentUser?.getIdToken();
+ const publicRequest=path==='/config'||path==='/products'||path.startsWith('/products/')||path==='/enquiries';
+ if(!publicRequest)await auth.authStateReady();
+ const token=publicRequest?null:await auth.currentUser?.getIdToken();
  const response=await fetch(apiUrl(path),{...options,headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`} : {}),...options.headers}});
  return readApiResponse(response);
 }

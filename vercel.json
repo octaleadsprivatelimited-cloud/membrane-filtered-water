@@ -11,7 +11,7 @@
   ],
   "functions": {
     "api/index.mjs": {
-      "includeFiles": "{server/**,src/config/**}",
+      "includeFiles": "{server/**,src/config/**,src/shared/**}",
       "maxDuration": 30
     }
   }

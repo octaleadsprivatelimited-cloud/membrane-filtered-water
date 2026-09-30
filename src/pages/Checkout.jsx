@@ -1,3 +1,4 @@
+import {totals} from '../shared/pricing';
 import {useState,useEffect,useRef} from 'react';
 import {Link,useNavigate} from 'react-router-dom';
 import {useAuth} from '../commerce/Auth';
@@ -6,7 +7,7 @@ import {api,startPayment} from '../commerce/api';
 import AddressFields from '../commerce/AddressFields';
 
 export default function Checkout(){
-  const {user,ready,profile,config,configError,error:authError}=useAuth();
+  const {user,ready,profile,config,configError,refresh,logout,error:authError}=useAuth();
   const {items,clear}=useShop();
   const navigate=useNavigate();
   const [address,setAddress]=useState({});
@@ -17,30 +18,17 @@ export default function Checkout(){
 
   useEffect(()=>{getCatalog().then(setCatalog).catch(e=>setError(e.message));},[]);
   
-  const subtotal=items.reduce((n,i)=>n+(catalog.find(p=>p.id===i.id)?.price||0)*i.quantity,0);
-  const gst=items.reduce((n,i)=>n+(catalog.find(p=>p.id===i.id)?.price||0)*i.quantity*((catalog.find(p=>p.id===i.id)?.gst||0)/100),0);
-  
-  let shipping = 0;
-  if (address?.pincode && address?.city) {
-    const isVizag = address.city.toLowerCase().includes('vizag') || address.city.toLowerCase().includes('visakha') || address.pincode.startsWith('530') || address.pincode.startsWith('531');
-    if (!isVizag) {
-      const s = address.pincode.substring(0,2);
-      let km = 1500;
-      if(['51','52','53'].includes(s)) km = 300;
-      else if(s==='50') km = 600;
-      else if(['75','76','77'].includes(s)) km = 400;
-      else if(['60','61','62','63','64'].includes(s)) km = 800;
-      else if(['56','57','58','59'].includes(s)) km = 1000;
-      else if(['40','41','42','43','44'].includes(s)) km = 1200;
-      shipping = km * (config?.shippingFee || 2);
-    }
-  }
-  if(config?.freeShippingAbove>0&&subtotal>=config.freeShippingAbove) shipping = 0;
-
+  const pricedItems=items.map(i=>({...i,...catalog.find(p=>p.id===i.id),quantity:i.quantity}));
+  const unavailable=items.some(i=>!catalog.some(p=>p.id===i.id&&p.stock>=i.quantity));
+  const amounts=totals(pricedItems,address,config||{});
+  const subtotal=amounts.subtotalPaise/100,gst=amounts.gstPaise/100,shipping=amounts.shippingPaise/100;
+  const attempt=JSON.stringify({items:items.map(i=>({id:i.id,quantity:i.quantity})),address});
+  const previousAttempt=useRef('');
   async function submit(e){
     e.preventDefault();
     if(busy)return;
     setBusy(true);setError('');
+    if(previousAttempt.current!==attempt){key.current=crypto.randomUUID();previousAttempt.current=attempt;}
     try{
       const order=await api('/orders',{
         method:'POST',
@@ -57,9 +45,9 @@ export default function Checkout(){
   }
   
   if(configError)return <div className="commerce-page" role="alert">Checkout is temporarily unavailable. {configError} <button onClick={()=>window.location.reload()}>Retry</button></div>;
-  if(authError)return <div className="commerce-page" role="alert">{authError}</div>;
+  if(authError)return <div className="commerce-page" role="alert">{authError} <button onClick={()=>refresh().catch(()=>{})}>Retry account</button> <button onClick={logout}>Sign out</button></div>;
   if(!ready||!config)return <div className="commerce-page">Loading checkout…</div>;
-  if(!user)return <div className="commerce-page"><h1>Sign in to checkout.</h1><p>Keep your addresses and orders together.</p><Link className="store-pill" to="/login">Sign in / create account</Link></div>;
+  if(!user)return <div className="commerce-page"><h1>Sign in to checkout.</h1><p>Keep your addresses and orders together.</p><Link className="store-pill" to="/login?next=/checkout">Continue with Google</Link></div>;
   if(!items.length)return <div className="commerce-page"><h1>Your bag is empty.</h1><Link to="/products">Explore products</Link></div>;
   
   return (
@@ -73,8 +61,9 @@ export default function Checkout(){
           <AddressFields value={address} onChange={setAddress}/>
           <section className="checkout-gateway"><span className="shop-kicker">PAYMENT METHOD</span><h2>Cashfree Payments</h2><p>UPI · Cards · Net banking</p><small>Available methods are confirmed by Cashfree at checkout. We never store your card number or UPI PIN.</small></section>
           <p className="commerce-notice">{config.paymentMode==='disabled'?(config.emulator?'Local demo order only. No payment will be collected.':'Payments are not connected yet. Please return once checkout is available.'):`Pay securely through Cashfree ${config.paymentMode==='sandbox'?'sandbox (test payments)':''}.`}</p>
+          {unavailable&&<p role="alert" className="commerce-error">An item is unavailable or exceeds current stock. <Link to="/bag">Update your bag</Link></p>}
           {error&&<p role="alert" className="commerce-error">{error}</p>}
-          <button className="store-pill" disabled={busy||!catalog.length||(!config.emulator&&config.paymentMode==='disabled')}>{busy?'Creating order…':config.paymentMode==='disabled'?'Place demo order':'Continue to Cashfree'}</button>
+          <button className="store-pill" disabled={busy||unavailable||!catalog.length||(!config.emulator&&config.paymentMode==='disabled')}>{busy?'Creating order…':config.paymentMode==='disabled'?'Place demo order':'Continue to Cashfree'}</button>
           <p className="commerce-note">Review <Link to="/policies/shipping">shipping</Link> and <Link to="/policies/returns">returns</Link> before ordering.</p>
         </form>
         <aside className="store-summary">

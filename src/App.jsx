@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { ShopProvider } from './store/Shop';
@@ -22,7 +22,7 @@ import Contact from './pages/Contact';
 
 // Admin Pages
 import Login from './pages/admin/Login';
-import Dashboard from './pages/admin/Dashboard';
+const Dashboard=lazy(()=>import('./pages/admin/Dashboard'));
 
 // Scroll to top on route change
 function ScrollToTop() {
@@ -71,7 +71,7 @@ function App() {
           
           {/* Admin Routes */}
           <Route path="/admin" element={<Login />} />
-          <Route path="/admin/dashboard" element={<Dashboard />} />
+          <Route path="/admin/dashboard" element={<Suspense fallback={<p role="status" className="commerce-page">Loading administration…</p>}><Dashboard /></Suspense>} />
           
           <Route path="*" element={<div className="pt-32 pb-12 text-center text-xl font-bold">404 - Page Not Found</div>} />
         </Routes>

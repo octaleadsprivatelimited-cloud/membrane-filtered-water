@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {auth,emulator} from '../server/firebase.mjs';
 import {db} from '../server/database.mjs';
+import {googleToken} from './helpers/google-auth.mjs';
 if(!emulator)throw new Error('Local tests only');
 after(async()=>{await db.close?.();});
-async function token(admin=false){const u=await auth.createUser({email:`service-${randomUUID()}@example.test`});if(admin)await auth.setCustomUserClaims(u.uid,{admin:true});const t=await auth.createCustomToken(u.uid);const r=await fetch('http://127.0.0.1:9199/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=demo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:t,returnSecureToken:true})});return {...u,token:(await r.json()).idToken};}
+async function token(admin=false){const u=await auth.createUser({email:`service-${randomUUID()}@example.test`});if(admin)await auth.setCustomUserClaims(u.uid,{admin:true});return {...u,token:await googleToken(u)};}
 async function post(path,user,body){const r=await fetch('http://127.0.0.1:8787/api'+path,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${user.token}`},body:JSON.stringify(body)});return {status:r.status,body:await r.json()};}
 test('request ownership, cancellation inventory, idempotent review and refund separation',async()=>{
  const owner=await token(),stranger=await token(),admin=await token(true),oid='qa_'+randomUUID(),pid='qa_'+randomUUID();
