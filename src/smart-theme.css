@@ -1525,6 +1525,215 @@
   }
 }
 
+/* ==========================================================================
+   18. MOBILE HEADER & NAVIGATION MENU FIX
+   Ensures seamless responsive navigation drawer, backdrop, and touch interactions.
+   ========================================================================== */
+.smart-nav-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(22, 12, 38, 0.45) !important;
+  backdrop-filter: blur(3px) !important;
+  -webkit-backdrop-filter: blur(3px) !important;
+  z-index: 998 !important;
+}
+
+@media (max-width: 960px) {
+  .smart-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
+  }
+
+  .smart-navigation {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 10px 18px !important;
+    position: relative !important;
+    z-index: 1000 !important;
+    background: #ffffff !important;
+  }
+
+  .smart-logo {
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .smart-logo img {
+    height: 32px !important;
+    max-width: 130px !important;
+    width: auto !important;
+  }
+
+  .smart-nav-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  .smart-nav-actions > a {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #49317e !important;
+    padding: 6px !important;
+    position: relative !important;
+  }
+
+  .smart-nav-actions > a span {
+    display: none !important;
+  }
+
+  .smart-nav-actions > a b {
+    position: absolute !important;
+    top: 0px !important;
+    right: 0px !important;
+    background: #49317e !important;
+    color: #ffffff !important;
+    font-size: 10px !important;
+    min-width: 17px !important;
+    height: 17px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+  }
+
+  .smart-menu-toggle {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 8px !important;
+    background: #f6f0fc !important;
+    border: 1px solid #ebdff2 !important;
+    color: #49317e !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    margin-left: 2px !important;
+    transition: all 0.18s ease !important;
+  }
+
+  .smart-menu-toggle:hover,
+  .smart-menu-toggle:active {
+    background: #eae0f7 !important;
+    color: #311c5d !important;
+  }
+
+  /* Mobile Dropdown Drawer */
+  .smart-links {
+    display: none !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: #ffffff !important;
+    box-shadow: 0 20px 40px rgba(40, 25, 75, 0.16) !important;
+    border-top: 1px solid #ede5f5 !important;
+    border-bottom: 2px solid #dbceeb !important;
+    padding: 16px 18px 22px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    z-index: 9999 !important;
+    margin: 0 !important;
+  }
+
+  .smart-links.is-open {
+    display: flex !important;
+    animation: smartNavSlideDown 0.22s ease-out forwards !important;
+  }
+
+  .smart-links a {
+    display: flex !important;
+    align-items: center !important;
+    padding: 11px 14px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    color: #302058 !important;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+    transition: all 0.15s ease !important;
+  }
+
+  .smart-links a:hover,
+  .smart-links a:focus,
+  .smart-links a.active {
+    background: #f7f1fc !important;
+    color: #49317e !important;
+  }
+
+  .smart-links a.active:after {
+    display: none !important;
+  }
+
+  .smart-links .smart-enquire {
+    margin-top: 10px !important;
+    padding: 13px !important;
+    text-align: center !important;
+    justify-content: center !important;
+    background: #49317e !important;
+    color: #ffffff !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(73, 49, 126, 0.25) !important;
+  }
+
+  .smart-links .smart-enquire:hover {
+    background: #342060 !important;
+    color: #ffffff !important;
+  }
+}
+
+@keyframes smartNavSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .smart-navigation {
+    padding: 8px 14px !important;
+  }
+  .smart-logo img {
+    height: 28px !important;
+  }
+  .smart-menu-toggle {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  .smart-search-row {
+    padding: 6px 12px 8px !important;
+  }
+  .smart-search-categories {
+    padding-bottom: 2px !important;
+    gap: 5px !important;
+  }
+  .smart-search-categories a {
+    font-size: 10px !important;
+    padding: 4px 9px !important;
+  }
+  .smart-search-category-select {
+    font-size: 10.5px !important;
+    padding: 6px 4px !important;
+    max-width: 88px !important;
+  }
+  .smart-search-form input {
+    font-size: 11px !important;
+    padding: 6px 8px !important;
+  }
+}
+
+
 
 
 

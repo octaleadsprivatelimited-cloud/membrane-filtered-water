@@ -22,6 +22,7 @@ export default function Navbar(){
 
   return (
     <header className="smart-header">
+      {open && <div className="smart-nav-backdrop" onClick={()=>setOpen(false)} aria-hidden="true" />}
       <div className="smart-navigation">
         <Link to="/" className="smart-logo" onClick={()=>setOpen(false)}>
           <img src="/logo.jpg" alt="membraneIQ"/>
