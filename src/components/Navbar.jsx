@@ -21,7 +21,7 @@ export default function Navbar(){
   };
 
   return (
-    <header className="smart-header">
+    <header className={open ? 'smart-header is-menu-open' : 'smart-header'}>
       <div className="smart-navigation">
         <Link to="/" className="smart-logo" onClick={()=>setOpen(false)}>
           <img src="/logo.jpg" alt="membraneIQ"/>
@@ -41,7 +41,7 @@ export default function Navbar(){
         </div>
       </div>
 
-      {/* Dedicated Full-Width Mobile Navigation Drawer */}
+      {/* Dedicated Clean Full-Width Mobile Navigation Drawer */}
       {open && (
         <>
           <div className="smart-mobile-backdrop" onClick={()=>setOpen(false)} aria-hidden="true" />
@@ -49,12 +49,12 @@ export default function Navbar(){
             <div className="smart-mobile-drawer-body">
               <nav className="smart-mobile-nav">
                 {[
-                  ['/','Home','Explore water systems & care'],
-                  ['/products','Water systems','Residential, under-sink & commercial'],
-                  ['/technology','Technology','Membrane science & filtration stages'],
-                  ['/services','Services & AMC','Doorstep setup, repairs & maintenance'],
-                  ['/about','About us','Our story & purity standards']
-                ].map(([to,label,sub])=>(
+                  ['/','Home'],
+                  ['/products','Water systems'],
+                  ['/technology','Technology'],
+                  ['/services','Services & AMC'],
+                  ['/about','About us']
+                ].map(([to,label])=>(
                   <NavLink
                     key={to}
                     to={to}
@@ -62,10 +62,7 @@ export default function Navbar(){
                     className={({isActive})=>isActive?'smart-mobile-link is-active':'smart-mobile-link'}
                     onClick={()=>setOpen(false)}
                   >
-                    <div className="smart-mobile-link-text">
-                      <span className="smart-mobile-link-title">{label}</span>
-                      <span className="smart-mobile-link-sub">{sub}</span>
-                    </div>
+                    <span className="smart-mobile-link-label">{label}</span>
                     <span className="smart-mobile-link-arrow">→</span>
                   </NavLink>
                 ))}
