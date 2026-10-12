@@ -22,25 +22,72 @@ export default function Navbar(){
 
   return (
     <header className="smart-header">
-      {open && <div className="smart-nav-backdrop" onClick={()=>setOpen(false)} aria-hidden="true" />}
       <div className="smart-navigation">
         <Link to="/" className="smart-logo" onClick={()=>setOpen(false)}>
           <img src="/logo.jpg" alt="membraneIQ"/>
         </Link>
-        <nav className={open?'smart-links is-open':'smart-links'} aria-label="Main navigation">
+        <nav className="smart-links desktop-only" aria-label="Main navigation">
           {[['/','Home'],['/products','Water systems'],['/technology','Technology'],['/services','Services'],['/about','About us']].map(([to,label])=>(
-            <NavLink key={to} to={to} end={to==='/'} onClick={()=>setOpen(false)}>{label}</NavLink>
+            <NavLink key={to} to={to} end={to==='/'}>{label}</NavLink>
           ))}
-          <Link className="smart-enquire" to="/contact" onClick={()=>setOpen(false)}>Enquire now</Link>
+          <Link className="smart-enquire" to="/contact">Enquire now</Link>
         </nav>
         <div className="smart-nav-actions">
           <Link to="/account" aria-label="Your account"><UserRound size={20}/><span>Account</span></Link>
           <Link to="/bag" aria-label={`Shopping cart, ${count} items`}><ShoppingBag size={20}/><b>{count}</b></Link>
           <button className="smart-menu-toggle" aria-label={open?'Close navigation':'Open navigation'} aria-expanded={open} onClick={()=>setOpen(!open)}>
-            {open?<X/>:<Menu/>}
+            {open?<X size={22}/>:<Menu size={22}/>}
           </button>
         </div>
       </div>
+
+      {/* Dedicated Full-Width Mobile Navigation Drawer */}
+      {open && (
+        <>
+          <div className="smart-mobile-backdrop" onClick={()=>setOpen(false)} aria-hidden="true" />
+          <div className="smart-mobile-drawer" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+            <div className="smart-mobile-drawer-body">
+              <nav className="smart-mobile-nav">
+                {[
+                  ['/','Home','Explore water systems & care'],
+                  ['/products','Water systems','Residential, under-sink & commercial'],
+                  ['/technology','Technology','Membrane science & filtration stages'],
+                  ['/services','Services & AMC','Doorstep setup, repairs & maintenance'],
+                  ['/about','About us','Our story & purity standards']
+                ].map(([to,label,sub])=>(
+                  <NavLink
+                    key={to}
+                    to={to}
+                    end={to==='/'}
+                    className={({isActive})=>isActive?'smart-mobile-link is-active':'smart-mobile-link'}
+                    onClick={()=>setOpen(false)}
+                  >
+                    <div className="smart-mobile-link-text">
+                      <span className="smart-mobile-link-title">{label}</span>
+                      <span className="smart-mobile-link-sub">{sub}</span>
+                    </div>
+                    <span className="smart-mobile-link-arrow">→</span>
+                  </NavLink>
+                ))}
+              </nav>
+
+              <div className="smart-mobile-drawer-footer">
+                <Link to="/contact" className="smart-mobile-enquire" onClick={()=>setOpen(false)}>
+                  Enquire now →
+                </Link>
+                <div className="smart-mobile-meta-links">
+                  <Link to="/account" onClick={()=>setOpen(false)}>
+                    <UserRound size={16}/> Customer Account
+                  </Link>
+                  <Link to="/bag" onClick={()=>setOpen(false)}>
+                    <ShoppingBag size={16}/> Shopping Cart ({count})
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="smart-search-row">
         {/* Categories on the side of the search bar */}
