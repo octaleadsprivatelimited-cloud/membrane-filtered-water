@@ -1,10 +1,15 @@
 import {db as firestore} from './firebase.mjs';
 import {createMysqlStore} from './mysql.mjs';
 import {mysqlOptions} from './mysql-config.mjs';
-export const databaseDriver=process.env.DATABASE_DRIVER||'mysql';
+export function resolveDatabaseDriver(env = process.env) {
+  if (env.DATABASE_DRIVER) return env.DATABASE_DRIVER;
+  const hasMysql = Boolean(env.MYSQL_URL || env.DATABASE_URL || (env.DB_HOST && env.DB_USER && env.DB_NAME && env.DB_PASSWORD));
+  return hasMysql ? 'mysql' : 'firestore';
+}
+export const databaseDriver = resolveDatabaseDriver();
 let store,configurationError;
 try{
- if(!['mysql','firestore'].includes(databaseDriver))throw new Error('Unsupported DATABASE_DRIVER. Use mysql.');
+ if(!['mysql','firestore'].includes(databaseDriver))throw new Error('Unsupported DATABASE_DRIVER. Use mysql or firestore.');
  store=databaseDriver==='mysql'?createMysqlStore(mysqlOptions()):firestore;
 }catch(error){configurationError=error;}
 export const db=store;
