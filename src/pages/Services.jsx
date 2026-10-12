@@ -4,10 +4,12 @@ import { Wrench, ShieldCheck, Droplets, Gauge, FlaskConical, Sparkles, Truck, Sm
 import { fetchServices } from '../firebase/mockDb';
 
 const demoServices = [
-  { id: 'demo-quality', title: 'Water Quality Check', desc: 'Understand your water with a basic quality assessment and filtration recommendations.', price: 'Request a quote', category: 'Testing', icon: FlaskConical },
-  { id: 'demo-clean', title: 'System Sanitization', desc: 'A thorough cleaning of the storage tank and water lines as part of routine purifier care.', price: 'Request a quote', category: 'Maintenance', icon: Sparkles },
-  { id: 'demo-move', title: 'Purifier Relocation', desc: 'Careful disconnection and reinstallation when you move your purifier to a new home.', price: 'Request a quote', category: 'Installation', icon: Truck },
-  { id: 'demo-smart', title: 'Smart App Setup', desc: 'Get connected with app pairing, monitoring setup, and a guided walkthrough of your system.', price: 'Request a quote', category: 'Support', icon: Smartphone },
+  { id: 'demo-quality', title: 'Water Quality Check', desc: 'Understand your water with a basic quality assessment and filtration recommendations.', price: '₹499', category: 'Testing', icon: FlaskConical },
+  { id: 'demo-clean', title: 'System Sanitization', desc: 'A thorough cleaning of the storage tank and water lines as part of routine purifier care.', price: '₹799', category: 'Maintenance', icon: Sparkles },
+  { id: 'demo-move', title: 'Purifier Relocation', desc: 'Careful disconnection and reinstallation when you move your purifier to a new home.', price: '₹1,299', category: 'Installation', icon: Truck },
+  { id: 'demo-prefilter', title: 'Pre-Filter Setup', desc: 'Heavy-duty outer pre-filter housing installation to trap mud, rust and large sediment.', price: '₹599', category: 'Installation', icon: Wrench },
+  { id: 'demo-carbon', title: 'Carbon Polishing', desc: 'Post-filtration carbon cartridge refresh to enhance natural sweetness and crisp taste.', price: '₹699', category: 'Maintenance', icon: Droplets },
+  { id: 'demo-smart', title: 'Smart App Setup', desc: 'Get connected with app pairing, monitoring setup, and a guided walkthrough of your system.', price: '₹299', category: 'Support', icon: Smartphone },
 ];
 const categories = ['All services', 'Installation', 'Maintenance', 'Testing', 'Support'];
 const Services = () => {

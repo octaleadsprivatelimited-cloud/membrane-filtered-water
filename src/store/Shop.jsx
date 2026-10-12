@@ -1,8 +1,26 @@
 import {normalizeCart} from './cart';
 import { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../commerce/api';
+import { demoProducts } from './demoProducts';
 export const money = n => `₹${Number(n).toLocaleString('en-IN')}`;
-export const getCatalog = () => api('/products');
+export const getCatalog = async () => {
+  try {
+    const data = await api('/products');
+    if (Array.isArray(data) && data.length > 0) return data;
+  } catch {
+    // fallback to demo products
+  }
+  return demoProducts;
+};
+export const getProductById = async (id) => {
+  try {
+    const data = await api(`/products/${encodeURIComponent(id)}`);
+    if (data && data.id) return data;
+  } catch {
+    // fallback
+  }
+  return demoProducts.find(p => p.id === id) || null;
+};
 const ShopContext = createContext(null);
 export function ShopProvider({ children }) {
   const [items, setItems] = useState(() => { try { return normalizeCart(JSON.parse(localStorage.getItem('aquapure-bag') || '[]'));  } catch { return []; } });
