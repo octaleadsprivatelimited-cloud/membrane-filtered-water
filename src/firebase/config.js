@@ -2,10 +2,14 @@ import {initializeApp} from 'firebase/app';
 import {getAuth,connectAuthEmulator} from 'firebase/auth';
 import {getAnalytics,isSupported} from 'firebase/analytics';
 import appConfig from '../config/appConfig';
-const useEmulator=typeof window!=='undefined'&&appConfig.local.hostnames.includes(window.location.hostname);
-const app=initializeApp({...appConfig.firebase,projectId:useEmulator?appConfig.local.firebaseProjectId:appConfig.firebase.projectId});
-export const auth=getAuth(app);
-export let analytics=null;
-if(typeof window!=='undefined'&&!useEmulator)isSupported().then(supported=>{if(supported)analytics=getAnalytics(app);}).catch(()=>{});
-if(useEmulator)connectAuthEmulator(auth,appConfig.local.authEmulatorUrl,{disableWarnings:true});
-export const isEmulator=useEmulator;
+const envFlag = import.meta.env.VITE_USE_FIREBASE_EMULATORS;
+const useEmulator = envFlag === 'true' || (envFlag === undefined && typeof window !== 'undefined' && appConfig.local.hostnames.includes(window.location.hostname) && window.location.port !== '8787');
+const app = initializeApp({
+  ...appConfig.firebase,
+  projectId: useEmulator ? appConfig.local.firebaseProjectId : (import.meta.env.VITE_FIREBASE_PROJECT_ID || appConfig.firebase.projectId)
+});
+export const auth = getAuth(app);
+export let analytics = null;
+if (typeof window !== 'undefined' && !useEmulator) isSupported().then(supported => { if (supported) analytics = getAnalytics(app); }).catch(() => {});
+if (useEmulator) connectAuthEmulator(auth, appConfig.local.authEmulatorUrl, { disableWarnings: true });
+export const isEmulator = useEmulator;
