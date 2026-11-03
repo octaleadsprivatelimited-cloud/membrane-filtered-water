@@ -6,7 +6,7 @@ import {initializeApp,cert} from 'firebase-admin/app';
 import {getAuth} from 'firebase-admin/auth';
 import {getFirestore} from 'firebase-admin/firestore';
 import {parseServiceAccount} from './service-account.mjs';
-export const emulator=process.env.STORE_MODE ? process.env.STORE_MODE==='emulator' : !process.env.VERCEL&&process.env.NODE_ENV!=='production';
+export const emulator=process.env.STORE_MODE==='emulator';
 export const projectId=process.env.FIREBASE_PROJECT_ID||(emulator?appConfig.local.firebaseProjectId:appConfig.firebase.projectId);
 let app,initializationError;
 let configurationCode='FIREBASE_INITIALIZATION_FAILED';
@@ -25,13 +25,11 @@ try {
   let usingFile = false;
   
   if (!accountRaw) {
-    const filePath = process.env.GOOGLE_APPLICATION_CREDENTIALS || (!process.env.VERCEL ? path.resolve(process.cwd(), 'service-account.json') : null);
+    const filePath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
     configurationCode='FIREBASE_CREDENTIAL_FILE';
-    if(process.env.GOOGLE_APPLICATION_CREDENTIALS&&!fs.existsSync(filePath))throw new Error('The configured Firebase credential file is unavailable.');
-    if (filePath && fs.existsSync(filePath)) {
-      accountRaw = fs.readFileSync(filePath, 'utf8');
-      usingFile = true;
-    }
+    if (!filePath || !fs.existsSync(filePath)) throw new Error('The Firebase credential file is not configured or missing.');
+    accountRaw = fs.readFileSync(filePath, 'utf8');
+    usingFile = true;
   }
 
   if(accountRaw){

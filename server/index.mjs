@@ -24,7 +24,7 @@ const getSettings=async()=>({...settingsDefault,...(await db.doc('settings/store
 const all=async(collection)=>(await db.collection(collection).get()).docs.map(d=>({...d.data(),id:d.id}));
 const int=(v,min=0,max=1000000)=>Number.isInteger(Number(v))&&Number(v)>=min&&Number(v)<=max?Number(v):fail('Invalid quantity');
 async function authenticated(req,res,next){try{const token=(req.headers.authorization||'').replace(/^Bearer /,'');if(!token)fail('Please sign in',401);req.user=await auth.verifyIdToken(token,true);if(req.user.firebase?.sign_in_provider!=='google.com')return res.status(401).json({error:'Please sign in with Google to continue.',code:'GOOGLE_SIGN_IN_REQUIRED'});next();}catch(error){if(error.status===401||['auth/argument-error','auth/id-token-expired','auth/id-token-revoked','auth/invalid-id-token','auth/user-disabled','auth/user-not-found'].includes(error.code))return res.status(401).json({error:'Please sign in again.'});console.error('Token verification unavailable:',error.code||error.message);res.status(503).json({error:'Account verification is temporarily unavailable. Please try again shortly.'});}}
-const admin=(req,res,next)=>(req.user.admin===true || (req.user.email_verified===true&&req.user.email === 'aquasafe.ap@gmail.com'))?next():res.status(403).json({error:'Administrator access required.'});
+const admin=(req,res,next)=>(req.user.admin===true || (req.user.customClaims && req.user.customClaims.admin===true) || (req.user.email_verified===true && req.user.email === 'aquasafe.ap@gmail.com'))?next():res.status(403).json({error:'Administrator access required.'});
 function address(v){if(!v||typeof v!=='object')fail('Address required');const a={name:text(v.name,100),phone:text(v.phone,20),line1:text(v.line1,200),city:text(v.city,80),state:text(v.state,80),pincode:text(v.pincode,6)};if(Object.values(a).some(x=>!x)||!/^\d{6}$/.test(a.pincode)||!/^\+?[\d\s-]{10,16}$/.test(a.phone))fail('Complete a valid Indian address and phone number.');return a;}
 function product(v,existing={}){
  const p={...existing,name:text(v.name,150),sku:text(v.sku,50)||`SKU-${Date.now()}`,category:text(v.category,100),description:text(v.description,5000),price:Number(v.price),originalPrice:Number(v.originalPrice||v.price),gst:Number(v.gst)||0,stock:int(v.stock),image:text(v.image,2000000),images:Array.isArray(v.images)?v.images.map(x=>text(x,2000000)).filter(Boolean).slice(0,10):[],brand:text(v.brand,100),gtin:text(v.gtin,14),mpn:text(v.mpn,100),features:Array.isArray(v.features)?v.features.map(x=>text(x,200)).filter(Boolean).slice(0,12):[],status:['draft','active','archived'].includes(v.status)?v.status:'draft',condition:['new','used','refurbished'].includes(v.condition)?v.condition:'new',identifiersExist:v.identifiersExist!==false,merchantEnabled:v.merchantEnabled===true,demo:v.demo===true,updatedAt:new Date().toISOString()};
@@ -46,7 +46,29 @@ async function settlePayment(orderId) {
 app.post('/api/payments/cashfree/webhook',express.raw({type:'application/json',limit:'128kb'}),async(req,res,next)=>{try{if(!verifyWebhook(req.body,req.headers['x-webhook-timestamp'],req.headers['x-webhook-signature']))fail('Invalid webhook signature',401);const payload=JSON.parse(req.body.toString());const orderId=payload.data?.order?.order_id;if(orderId)await settlePayment(orderId);res.json({received:true});}catch(e){next(e);}});
 app.use('/api',rateLimit({windowMs:60_000,limit:emulator?1000:180,standardHeaders:'draft-8',legacyHeaders:false,message:{error:'Too many requests. Please try again shortly.'}}));
 app.use(express.json({limit:'1mb'}));
-app.use((req,res,next)=>{res.set('X-Content-Type-Options','nosniff');if(req.path.startsWith('/api/'))res.set('Cache-Control','no-store');if(!['GET','HEAD','OPTIONS'].includes(req.method)&&req.headers.origin){const sameOrigin=req.headers.origin===`${emulator?'http':'https'}://${req.headers.host}`;const allowed=[(process.env.PUBLIC_STORE_URL||appConfig.frontendUrl).replace(/\/$/,''), ...(process.env.VERCEL_URL?[`https://${process.env.VERCEL_URL}`]:[]), ...(process.env.VERCEL_PROJECT_PRODUCTION_URL?[`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]:[]), ...(process.env.VERCEL?[]:['http://127.0.0.1:5173','http://localhost:5173','http://127.0.0.1:5174','http://localhost:5174'])].filter(Boolean);if(!sameOrigin&&!allowed.includes(req.headers.origin))return res.status(403).json({error:'Origin not allowed'});}next();});
+app.use((req,res,next)=>{
+  res.set('X-Content-Type-Options','nosniff');
+  if(req.path.startsWith('/api/')) res.set('Cache-Control','no-store');
+  if(!['GET','HEAD','OPTIONS'].includes(req.method) && req.headers.origin){
+    const sameOrigin = req.headers.origin === `${emulator?'http':'https'}://${req.headers.host}`;
+    const allowed = [
+      (process.env.PUBLIC_STORE_URL||appConfig.frontendUrl).replace(/\/$/,''),
+      ...(process.env.VERCEL_URL?[`https://${process.env.VERCEL_URL}`]:[]),
+      ...(process.env.VERCEL_PROJECT_PRODUCTION_URL?[`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]:[]),
+      ...(process.env.VERCEL?[]:['http://127.0.0.1:5173','http://localhost:5173','http://127.0.0.1:5174','http://localhost:5174'])
+    ].filter(Boolean);
+    if(!sameOrigin && !allowed.includes(req.headers.origin))
+      return res.status(403).json({error:'Origin not allowed'});
+    // Set CORS headers
+    res.set('Access-Control-Allow-Origin', req.headers.origin);
+    res.set('Vary','Origin');
+  }
+  next();
+});
+app.get('/admin', authenticated, admin, (req, res) => {
+  res.json({message:'✅ Admin access granted', uid:req.user.uid, email:req.user.email, admin:true});
+});
+
 app.get('/api/health',async(req,res)=>{try{if(databaseDriver==='mysql')await db.health();res.json({status:'ok',database:databaseDriver});}catch{res.status(503).json({error:'Database is unavailable',code:'DATABASE_UNAVAILABLE'});}});
 app.get('/api/config',async(req,res)=>res.json({emulator,database:databaseDriver,paymentMode:cashfreeReady()?paymentMode():'disabled',...await getSettings()}));
 app.get('/api/products',async(req,res)=>res.json((await all('products')).filter(p=>p.status==='active')));

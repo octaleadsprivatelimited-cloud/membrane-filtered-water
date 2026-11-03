@@ -4,55 +4,41 @@ import { Wrench, ShieldCheck, Droplets, Gauge, FlaskConical, Sparkles, Truck, Sm
 import { fetchServices } from '../firebase/mockDb';
 
 const demoServices = [
-  { id: 'demo-quality', title: 'Water Quality Check', desc: 'Understand your water with a basic quality assessment and filtration recommendations.', price: '₹499', category: 'Testing', icon: FlaskConical },
-  { id: 'demo-clean', title: 'System Sanitization', desc: 'A thorough cleaning of the storage tank and water lines as part of routine purifier care.', price: '₹799', category: 'Maintenance', icon: Sparkles },
-  { id: 'demo-move', title: 'Purifier Relocation', desc: 'Careful disconnection and reinstallation when you move your purifier to a new home.', price: '₹1,299', category: 'Installation', icon: Truck },
-  { id: 'demo-prefilter', title: 'Pre-Filter Setup', desc: 'Heavy-duty outer pre-filter housing installation to trap mud, rust and large sediment.', price: '₹599', category: 'Installation', icon: Wrench },
-  { id: 'demo-carbon', title: 'Carbon Polishing', desc: 'Post-filtration carbon cartridge refresh to enhance natural sweetness and crisp taste.', price: '₹699', category: 'Maintenance', icon: Droplets },
-  { id: 'demo-smart', title: 'Smart App Setup', desc: 'Get connected with app pairing, monitoring setup, and a guided walkthrough of your system.', price: '₹299', category: 'Support', icon: Smartphone },
+  { id: 'demo-dealer', title: 'Authorized Dealership Onboarding', desc: 'Partner with us as an authorized distributor or stockist. Access wholesale bulk price slabs and credit lines.', price: 'Free Registration', category: 'Dealership', icon: ShieldCheck },
+  { id: 'demo-bulk', title: 'Carton & Bulk Membrane Dispatch', desc: 'Order 25, 50, or 100-piece cartons of 75/80/100 GPD membranes with rapid 24-48 hr pan-India freight delivery.', price: 'Custom B2B Rates', category: 'Wholesale', icon: Truck },
+  { id: 'demo-spare', title: 'Technician Spare Parts Kits', desc: 'Complete servicing bundle including universal RO membrane housings, FR-450 tubes, elbow fittings, and Teflon rolls.', price: '₹1,499 / kit', category: 'Spares', icon: Wrench },
+  { id: 'demo-tds', title: 'Membrane Testing & TDS Certification', desc: 'Factory testing reports and salt rejection verification for commercial clients, institutions, and builders.', price: 'On Request', category: 'Testing', icon: FlaskConical },
+  { id: 'demo-pump', title: 'Booster Pump & Membrane Calibration', desc: 'Field diagnostic support for water purifier technicians to balance pump pressure (PSI) with membrane flux.', price: 'Technician Support', category: 'Technical Support', icon: Gauge },
+  { id: 'demo-b2b', title: 'B2B GST Billing & Order Portal', desc: 'Setup your dealer portal to track purchase orders, download input tax credit GST invoices, and manage stores.', price: 'Instant Access', category: 'Dealership', icon: Smartphone },
 ];
-const categories = ['All services', 'Installation', 'Maintenance', 'Testing', 'Support'];
+const categories = ['All services', 'Dealership', 'Wholesale', 'Spares', 'Testing', 'Technical Support'];
 const Services = () => {
-  const [servicesList, setServicesList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [category, setCategory] = useState('All services');
-  useEffect(() => {
-    let active = true;
-    fetchServices().then(data => { if (active) setServicesList(data); }).catch(() => { if (active) setError(true); }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, []);
-  const services = [...servicesList.map((service, index) => ({ ...service, category: ['Installation', 'Maintenance', 'Maintenance', 'Support'][index % 4], icon: [Wrench, ShieldCheck, Droplets, Gauge][index % 4] })), ...demoServices];
-  const visible = services.filter(service => category === 'All services' || service.category === category);
+  const visible = demoServices.filter(service => category === 'All services' || service.category === category);
   return (
     <div className="services-page">
       <section className="services-hero">
         <div className="services-container services-hero-grid">
-          <div><span className="services-eyebrow">AQUA SAFE WATER TECHNOLOGIES CARE</span><h1>Expert care.<br /><span>For every drop.</span></h1><p>From the first installation to everyday maintenance, find the right support to keep your water system working at its best.</p><a href="#service-catalog" className="services-button">Explore services <ArrowRight size={17} /></a></div>
-          <aside className="services-care"><Wrench size={30} strokeWidth={1.4} /><h2>Support through the life<br />of your system.</h2>{['Installation & setup', 'Routine maintenance', 'Troubleshooting & guidance'].map(item => <div key={item}><Check size={16} />{item}</div>)}<span>ONE PLACE FOR YOUR WATER CARE</span></aside>
+          <div><span className="services-eyebrow">AQUA SAFE WATER TECHNOLOGIES · B2B &amp; FIELD HUB</span><h1>Empowering Dealers &amp;<br /><span>RO Technicians.</span></h1><p>From carton-level membrane supplies to technician spare bundles and priority field assistance, we equip water purification professionals across India.</p><a href="#service-catalog" className="services-button">Explore B2B Services <ArrowRight size={17} /></a></div>
+          <aside className="services-care"><Wrench size={30} strokeWidth={1.4} /><h2>Dedicated trade support<br />for your business.</h2>{['Authorized dealer pricing', 'Carton dispatch & transit insurance', 'Dedicated technician support desk'].map(item => <div key={item}><Check size={16} />{item}</div>)}<span>SUPPLYING PURIFIER PROFESSIONALS NATIONWIDE</span></aside>
         </div>
       </section>
       <section id="service-catalog" className="services-catalog">
         <div className="services-container">
-          <div className="services-section-heading"><div><span className="services-eyebrow">HOW CAN WE HELP?</span><h2>Care that fits your needs.</h2></div><p>Explore installation, maintenance, and support options.<br />Additional services are shown as demo examples.</p></div>
+          <div className="services-section-heading"><div><span className="services-eyebrow">TRADE SERVICES &amp; SOLUTIONS</span><h2>Tailored for Dealerships &amp; Service Crews</h2></div><p>Select a business service below or submit an inquiry to join our dealer network.</p></div>
           <div className="service-filters" aria-label="Filter services">{categories.map(item => <button key={item} type="button" aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}</div>
-          {loading ? <p role="status">Loading services…</p> : <>
-            {error && <p role="status">Existing services could not be loaded. Demo services are available below.</p>}
-            <div className="service-grid">{visible.map(({ icon: Icon, ...service }) => <article className="service-card" key={service.id}>
-              <div className="service-card-top"><span className="service-icon"><Icon size={24} strokeWidth={1.5} /></span><span>{service.category}</span></div>
-              <h3>{service.title}</h3><p>{service.desc}</p>
-              {service.id.startsWith('demo-') && <span className="service-demo">Demo service</span>}
-              <div className="service-card-bottom"><strong>{service.price}</strong><Link to={`/contact?service=${encodeURIComponent(service.title)}`} aria-label={`Enquire about ${service.title}`}>Enquire <ArrowRight size={16} /></Link></div>
-            </article>)}</div>
-            {visible.length === 0 && <p>No services in this category yet.</p>}
-          </>}
+          <div className="service-grid">{visible.map(({ icon: Icon, ...service }) => <article className="service-card" key={service.id}>
+            <div className="service-card-top"><span className="service-icon"><Icon size={24} strokeWidth={1.5} /></span><span>{service.category}</span></div>
+            <h3>{service.title}</h3><p>{service.desc}</p>
+            <div className="service-card-bottom"><strong>{service.price}</strong><Link to={`/contact?service=${encodeURIComponent(service.title)}`} aria-label={`Enquire about ${service.title}`}>Enquire / Order <ArrowRight size={16} /></Link></div>
+          </article>)}</div>
         </div>
       </section>
-      <section className="services-process"><div className="services-container"><span className="services-eyebrow">A SIMPLE NEXT STEP</span><h2>From enquiry to everyday confidence.</h2><div className="services-steps">{[
-        ['01', 'Tell us what you need', 'Choose a service and get in touch with our team.'],
-        ['02', 'Confirm the details', 'Discuss your system, service scope, and a suitable visit time.'],
-        ['03', 'Get your system cared for', 'Receive support and practical guidance for ongoing maintenance.'],
-      ].map(([number, title, desc]) => <article key={number}><span>{number}</span><h3>{title}</h3><p>{desc}</p></article>)}</div><div className="services-help"><div><h3>Not sure which service to choose?</h3><p>Tell us about your purifier. We’ll help you find the next step.</p></div><Link to="/contact" className="services-button">Talk to our team <ArrowRight size={17} /></Link></div></div></section>
+      <section className="services-process"><div className="services-container"><span className="services-eyebrow">HOW TO COMMENCE TRADE</span><h2>From First Order to Seamless Supply</h2><div className="services-steps">{[
+        ['01', 'Share Your Business Profile', 'Tell us about your dealership, retail shop, or RO service technician team.'],
+        ['02', 'Receive Wholesale Slab Rates', 'Access tiered volume pricing, GST quotation, and sample testing options.'],
+        ['03', 'Fast Dispatch & Ongoing Support', 'Get reliable doorstep freight delivery and direct technical hotline access.'],
+      ].map(([number, title, desc]) => <article key={number}><span>{number}</span><h3>{title}</h3><p>{desc}</p></article>)}</div><div className="services-help"><div><h3>Want to place a custom bulk order?</h3><p>Speak with our B2B commercial desk for custom membrane specifications, private labeling, or bulk carton dispatch.</p></div><Link to="/contact?service=Bulk+Quote" className="services-button">Talk to B2B Desk <ArrowRight size={17} /></Link></div></div></section>
     </div>
   );
 };

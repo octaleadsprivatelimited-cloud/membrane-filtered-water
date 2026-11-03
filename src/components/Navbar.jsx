@@ -27,10 +27,10 @@ export default function Navbar(){
           <img src="/logo.jpg" alt="membraneIQ"/>
         </Link>
         <nav className="smart-links desktop-only" aria-label="Main navigation">
-          {[['/','Home'],['/products','Water systems'],['/technology','Technology'],['/services','Services'],['/about','About us']].map(([to,label])=>(
+          {[['/','Home'],['/products','Membranes & Spares'],['/technology','Membrane Tech'],['/services','Technician Hub'],['/about','About Us']].map(([to,label])=>(
             <NavLink key={to} to={to} end={to==='/'}>{label}</NavLink>
           ))}
-          <Link className="smart-enquire" to="/contact">Enquire now</Link>
+          <Link className="smart-enquire" to="/contact?service=Dealer+Network">Dealer Inquiries</Link>
         </nav>
         <div className="smart-nav-actions">
           <Link to="/account" aria-label="Your account"><UserRound size={20}/><span>Account</span></Link>
@@ -50,10 +50,10 @@ export default function Navbar(){
               <nav className="smart-mobile-nav">
                 {[
                   ['/','Home'],
-                  ['/products','Water systems'],
-                  ['/technology','Technology'],
-                  ['/services','Services & AMC'],
-                  ['/about','About us']
+                  ['/products','Membranes & Spares'],
+                  ['/technology','Membrane Tech'],
+                  ['/services','Technician Hub'],
+                  ['/about','About Us']
                 ].map(([to,label])=>(
                   <NavLink
                     key={to}
@@ -69,8 +69,8 @@ export default function Navbar(){
               </nav>
 
               <div className="smart-mobile-drawer-footer">
-                <Link to="/contact" className="smart-mobile-enquire" onClick={()=>setOpen(false)}>
-                  Enquire now →
+                <Link to="/contact?service=Dealer+Network" className="smart-mobile-enquire" onClick={()=>setOpen(false)}>
+                  Dealer Inquiries →
                 </Link>
                 <div className="smart-mobile-meta-links">
                   <Link to="/account" onClick={()=>setOpen(false)}>
@@ -89,11 +89,11 @@ export default function Navbar(){
       <div className="smart-search-row">
         {/* Categories on the side of the search bar */}
         <div className="smart-search-categories" aria-label="Product categories">
-          <Link to="/products" onClick={()=>setOpen(false)}>All Systems</Link>
-          <Link to="/products?q=Home" onClick={()=>setOpen(false)}>Home Purifiers</Link>
-          <Link to="/products?q=Under+Sink" onClick={()=>setOpen(false)}>Under Sink</Link>
-          <Link to="/products?q=Commercial" onClick={()=>setOpen(false)}>Commercial</Link>
-          <Link to="/products?q=Filter" onClick={()=>setOpen(false)}>Spare Filters</Link>
+          <Link to="/products" onClick={()=>setOpen(false)}>All Membranes</Link>
+          <Link to="/products?q=RO+Membrane" onClick={()=>setOpen(false)}>RO Membranes (75-300 GPD)</Link>
+          <Link to="/products?q=Spare" onClick={()=>setOpen(false)}>Technician Spares</Link>
+          <Link to="/products?q=Commercial" onClick={()=>setOpen(false)}>Commercial RO</Link>
+          <Link to="/products?q=Housing" onClick={()=>setOpen(false)}>Membrane Housings</Link>
         </div>
 
         {/* Search bar moved to the right side */}
