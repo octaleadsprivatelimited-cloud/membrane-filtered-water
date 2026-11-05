@@ -48,6 +48,7 @@ app.use('/api',rateLimit({windowMs:60_000,limit:emulator?1000:180,standardHeader
 app.use(express.json({limit:'1mb'}));
 app.use((req,res,next)=>{
   res.set('X-Content-Type-Options','nosniff');
+  res.set('Cross-Origin-Opener-Policy','same-origin-allow-popups');
   if(req.path.startsWith('/api/')) res.set('Cache-Control','no-store');
   if(!['GET','HEAD','OPTIONS'].includes(req.method) && req.headers.origin){
     const sameOrigin = req.headers.origin === `${emulator?'http':'https'}://${req.headers.host}`;

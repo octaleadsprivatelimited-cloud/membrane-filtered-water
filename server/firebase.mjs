@@ -58,4 +58,4 @@ export function assertFirebaseReady(){
  if(initializationError){const error=new Error('Store account services are not configured. Please contact support.');error.status=503;error.code=configurationCode;throw error;}
 }
 export const auth=app?getAuth(app):null;
-export const db=app&&process.env.DATABASE_DRIVER==='firestore'?getFirestore(app):null;
+export const db=app&&process.env.DATABASE_DRIVER!=='mysql'?getFirestore(app):null;
