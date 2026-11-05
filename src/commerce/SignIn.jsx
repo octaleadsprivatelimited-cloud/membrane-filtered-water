@@ -31,9 +31,13 @@ export default function SignIn({ admin = false }) {
   const Icon = admin ? ShieldCheck : UserRound;
 
   const finishSignIn = useCallback(async (user) => {
-    const existing = await api('/me');
-    if (!existing.name && user.displayName) {
-      await api('/me', { method: 'PUT', body: JSON.stringify({ name: user.displayName, addresses: existing.addresses || [] }) });
+    try {
+      const existing = await api('/me');
+      if (!existing.name && user.displayName) {
+        await api('/me', { method: 'PUT', body: JSON.stringify({ name: user.displayName, addresses: existing.addresses || [] }) }).catch(() => {});
+      }
+    } catch {
+      // Continue even if initial profile fetch or update encounters transient issues
     }
     const profile = await refresh();
     if (!profile) throw new Error('Please continue with Google to sign in again.');

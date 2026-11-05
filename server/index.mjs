@@ -51,17 +51,19 @@ app.use((req,res,next)=>{
   res.set('Cross-Origin-Opener-Policy','same-origin-allow-popups');
   if(req.path.startsWith('/api/')) res.set('Cache-Control','no-store');
   if(!['GET','HEAD','OPTIONS'].includes(req.method) && req.headers.origin){
-    const sameOrigin = req.headers.origin === `${emulator?'http':'https'}://${req.headers.host}`;
+    const reqOrigin = req.headers.origin;
+    const sameOrigin = reqOrigin === `http://${req.headers.host}` || reqOrigin === `https://${req.headers.host}`;
+    const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(reqOrigin);
     const allowed = [
       (process.env.PUBLIC_STORE_URL||appConfig.frontendUrl).replace(/\/$/,''),
       ...(process.env.VERCEL_URL?[`https://${process.env.VERCEL_URL}`]:[]),
       ...(process.env.VERCEL_PROJECT_PRODUCTION_URL?[`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]:[]),
-      ...(process.env.VERCEL?[]:['http://127.0.0.1:5173','http://localhost:5173','http://127.0.0.1:5174','http://localhost:5174'])
+      ...(process.env.VERCEL?[]:['http://127.0.0.1:5173','http://localhost:5173','http://127.0.0.1:5174','http://localhost:5174','http://localhost:8787','http://127.0.0.1:8787'])
     ].filter(Boolean);
-    if(!sameOrigin && !allowed.includes(req.headers.origin))
+    if(!sameOrigin && !isLocal && !allowed.includes(reqOrigin))
       return res.status(403).json({error:'Origin not allowed'});
     // Set CORS headers
-    res.set('Access-Control-Allow-Origin', req.headers.origin);
+    res.set('Access-Control-Allow-Origin', reqOrigin);
     res.set('Vary','Origin');
   }
   next();
