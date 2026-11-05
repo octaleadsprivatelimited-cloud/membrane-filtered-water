@@ -42,7 +42,6 @@ export default function SignIn({ admin = false }) {
   }, [admin, next, navigate, refresh]);
 
   useEffect(() => {
-    if (!isEmulator) return;
     let active = true;
     localRedirectResult ||= getRedirectResult(auth);
     localRedirectResult.then(async result => {
@@ -68,8 +67,17 @@ export default function SignIn({ admin = false }) {
         await signInWithRedirect(auth, provider);
         return;
       }
-      const { user } = await signInWithPopup(auth, provider);
-      await finishSignIn(user);
+      try {
+        const { user } = await signInWithPopup(auth, provider);
+        await finishSignIn(user);
+      } catch (popupErr) {
+        // If popup is blocked or closed due to cross-origin policies, fall back to redirect
+        if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/cancelled-popup-request') {
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+        throw popupErr;
+      }
     } catch (err) {
       if (!['auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(err.code)) {
         setError(googleErrors[err.code] || (err.code?.startsWith('auth/') ? 'Google sign-in could not be completed. Please try again.' : err.message));
