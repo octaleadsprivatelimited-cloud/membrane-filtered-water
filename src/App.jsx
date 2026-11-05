@@ -71,6 +71,7 @@ function App() {
           
           {/* Admin Routes */}
           <Route path="/admin" element={<Login />} />
+          <Route path="/admin/login" element={<Login />} />
           <Route path="/admin/dashboard" element={<Suspense fallback={<p role="status" className="commerce-page">Loading administration…</p>}><Dashboard /></Suspense>} />
           
           <Route path="*" element={<div className="pt-32 pb-12 text-center text-xl font-bold">404 - Page Not Found</div>} />

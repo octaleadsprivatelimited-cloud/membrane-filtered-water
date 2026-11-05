@@ -65,7 +65,8 @@ app.use((req,res,next)=>{
   }
   next();
 });
-app.get('/admin', authenticated, admin, (req, res) => {
+// Admin authentication verification endpoint
+app.get('/api/admin/auth-check', authenticated, admin, (req, res) => {
   res.json({message:'✅ Admin access granted', uid:req.user.uid, email:req.user.email, admin:true});
 });
 
@@ -144,6 +145,15 @@ app.get('/api/admin/merchant/export',async(req,res)=>res.type('application/xml')
 app.get('/api/merchant/feed.xml',async(req,res)=>{const s=await getSettings();if(!s.merchantLive||emulator||!cashfreeReady()||paymentMode()!=='production')fail('Merchant feed is not published yet',503);res.type('application/xml').send(merchantFeed(await all('products'),s));});
 app.use('/api',(req,res)=>res.status(404).json({error:'Endpoint not found'}));
 app.use(express.static(distDirectory));
-app.get('/{*path}',(req,res)=>res.sendFile(resolve(distDirectory,'index.html')));
-app.use((err,req,res,_next)=>{const configCode=typeof err.code==='string'&&(err.code.startsWith('FIREBASE_')||err.code.startsWith('DATABASE_'))?err.code:undefined;console.error(configCode||'API_ERROR',err.message);res.status(err.status||500).json({error:err.status?err.message:'Something went wrong. Please retry.',...(configCode?{code:configCode}:{})});});
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api')) {
+    return res.sendFile('index.html', { root: distDirectory });
+  }
+  next();
+});
+app.use((err,req,res,_next)=>{
+  console.error('SERVER_ERROR_CAUGHT:', err);
+  const configCode=typeof err.code==='string'&&(err.code.startsWith('FIREBASE_')||err.code.startsWith('DATABASE_'))?err.code:undefined;
+  res.status(err.status||500).json({error:err.status?err.message:'Something went wrong. Please retry.',...(configCode?{code:configCode}:{})});
+});
 export default app; if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).href) { const port=Number(process.env.PORT||8787);app.listen(port,emulator?'127.0.0.1':'0.0.0.0',()=>console.log(`Store API on ${port}; Firebase ${emulator?'EMULATOR':'LIVE'}; Cashfree ${paymentMode()}`)); }

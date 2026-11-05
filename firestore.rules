@@ -1,7 +1,300 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // All store writes and reads use the authenticated API. No direct client access.
-    match /{document=**} { allow read, write: if false; }
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // This security rules file assumes the following data structures:
+    //
+    // Collection: products
+    // Document ID: product ID (alphanumeric / slug)
+    // Fields:
+    //   - id: string (optional/required) - product identifier
+    //   - name: string (required, 1-150 chars) - product title
+    //   - sku: string (required, 1-50 chars) - stock keeping unit
+    //   - category: string (required, 1-100 chars) - product category
+    //   - description: string (required, 1-5000 chars) - product details
+    //   - price: number (required, 0 < price <= 10000000) - current selling price (INR)
+    //   - originalPrice: number (required, >= price) - original list price
+    //   - discount: string (optional, 0-50 chars) - discount percentage display
+    //   - gst: number (required, 0-100) - GST percentage
+    //   - stock: int (required, 0-1000000) - available inventory
+    //   - image: string (required, 0-2000000 chars) - main image URL or data URI
+    //   - images: list of strings (optional, max 10 items, each <= 2000000 chars)
+    //   - brand: string (optional, 0-100 chars)
+    //   - gtin: string (optional, 0-14 chars)
+    //   - mpn: string (optional, 0-100 chars)
+    //   - features: list of strings (optional, max 12 items, each <= 200 chars)
+    //   - status: string (required, in ['draft', 'active', 'archived'])
+    //   - condition: string (required, in ['new', 'used', 'refurbished'])
+    //   - identifiersExist: bool (optional)
+    //   - merchantEnabled: bool (optional)
+    //   - demo: bool (optional)
+    //   - createdAt: string or timestamp (optional/immutable on update)
+    //   - updatedAt: string or timestamp (optional)
+    //
+    // Collection: customers
+    // Document ID: Firebase Auth UID {userId}
+    // Fields:
+    //   - name: string (required, 0-100 chars)
+    //   - email: string (required, valid email, 0-100 chars)
+    //   - addresses: list of maps (required, max 5 items: name, phone, line1, city, state, pincode)
+    //   - createdAt: string or timestamp (optional/immutable on update)
+    //   - updatedAt: string or timestamp (optional)
+    //
+    // Collection: orders
+    // Document ID: orderId (e.g. aq_...)
+    // Fields:
+    //   - id: string (required, 1-100 chars)
+    //   - uid: string (required, matches creator UID or admin manual orders)
+    //   - email: string (required, 1-100 chars)
+    //   - address: map (required: name, phone, line1, city, state, pincode)
+    //   - items: list of maps (required, 1-50 items, each with id, name, price, quantity, gst, image)
+    //   - subtotalPaise: int/number (required, >= 0)
+    //   - shippingPaise: int/number (required, >= 0)
+    //   - gstPaise: int/number (optional, >= 0)
+    //   - totalPaise: int/number (required, >= 0)
+    //   - currency: string (required, 'INR')
+    //   - paymentMethod: string (required, in ['demo', 'cashfree', 'manual'])
+    //   - paymentStatus: string (required, in ['pending', 'paid', 'demo', 'failed', 'refunded'])
+    //   - status: string (required, in ['pending_payment', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'])
+    //   - createdAt: string or timestamp (required/immutable)
+    //   - paidAt: string or timestamp or null (optional)
+    //   - cancelledAt: string or timestamp or null (optional)
+    //   - updatedAt: string or timestamp or null (optional)
+    //   - tracking: string (optional, 0-200 chars)
+    //   - requestHash: string (optional, 0-128 chars)
+    //   - paymentKey: string (optional, 0-100 chars)
+    //   - cashfreeOrderId: string (optional, 0-100 chars)
+    //   - transactionId: string or null (optional, 0-100 chars)
+    //   - serviceRequests: list of maps (optional, max 10 items)
+    //
+    // Collection: enquiries
+    // Document ID: auto-generated document ID
+    // Fields:
+    //   - id: string (optional, 1-100 chars)
+    //   - name: string (required, 1-150 chars)
+    //   - email: string (required, valid email, 1-200 chars)
+    //   - phone: string (optional, 0-30 chars)
+    //   - subject: string (required, 1-200 chars)
+    //   - message: string (required, 5-5000 chars)
+    //   - status: string (required, in ['open', 'resolved'])
+    //   - createdAt: string or timestamp (required)
+    //   - updatedAt: string or timestamp (optional)
+    //
+    // Collection: settings
+    // Document ID: 'store'
+    // Fields:
+    //   - siteUrl: string (optional, 0-500 chars)
+    //   - shippingFee: number (required, 0-100000)
+    //   - freeShippingAbove: number (required, >= 0)
+    //   - supportEmail: string (optional, 0-200 chars)
+    //   - businessName: string (optional, 0-150 chars)
+    //   - merchantLive: bool (optional)
+    //   - slide1Title: string (optional, 0-500 chars)
+    //   - slide1Image: string (optional, 0-1000 chars)
+    //   - categories: list of strings (optional, max 50 items)
+    //   - shippingPolicy: string (optional, 0-10000 chars)
+    //   - returnsPolicy: string (optional, 0-10000 chars)
+    //   - privacyPolicy: string (optional, 0-10000 chars)
+    //   - termsPolicy: string (optional, 0-10000 chars)
+    //
+    // ===============================================================
+
+    // Default deny all access across all collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Administrator verification:
+    // 1. Custom token claim 'admin' == true
+    // 2. Direct token property 'admin' == true
+    // 3. Verified bootstrap administrator email 'aquasafe.ap@gmail.com'
+    function isAdmin() {
+      return isAuthenticated() && (
+        (request.auth.token.admin == true) ||
+        (request.auth.token.email_verified == true && request.auth.token.email == 'aquasafe.ap@gmail.com')
+      );
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+        email.size() <= 200 &&
+        email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+
+    function isValidAddressMap(addr) {
+      return addr is map &&
+        addr.keys().hasAll(['name', 'phone', 'line1', 'city', 'state', 'pincode']) &&
+        addr.keys().hasOnly(['name', 'phone', 'line1', 'city', 'state', 'pincode']) &&
+        addr.name is string && addr.name.size() > 0 && addr.name.size() <= 100 &&
+        addr.phone is string && addr.phone.size() >= 10 && addr.phone.size() <= 20 &&
+        addr.line1 is string && addr.line1.size() > 0 && addr.line1.size() <= 200 &&
+        addr.city is string && addr.city.size() > 0 && addr.city.size() <= 80 &&
+        addr.state is string && addr.state.size() > 0 && addr.state.size() <= 80 &&
+        addr.pincode is string && addr.pincode.size() == 6 && addr.pincode.matches('^\\d{6}$');
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    // Customer Profile Validator
+    function isValidCustomer(data) {
+      return data.keys().hasAll(['name', 'email', 'addresses']) &&
+        data.keys().hasOnly(['name', 'email', 'addresses', 'createdAt', 'updatedAt']) &&
+        data.name is string && data.name.size() <= 100 &&
+        isValidEmail(data.email) &&
+        data.addresses is list && data.addresses.size() <= 5;
+    }
+
+    // Product Validator (Admin writes)
+    function isValidProduct(data) {
+      return data.keys().hasAll(['name', 'sku', 'category', 'description', 'price', 'originalPrice', 'stock', 'status']) &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+        data.sku is string && data.sku.size() > 0 && data.sku.size() <= 50 &&
+        data.category is string && data.category.size() <= 100 &&
+        data.description is string && data.description.size() > 0 && data.description.size() <= 5000 &&
+        data.price is number && data.price > 0 && data.price <= 10000000 &&
+        data.originalPrice is number && data.originalPrice >= data.price &&
+        data.stock is int && data.stock >= 0 && data.stock <= 1000000 &&
+        data.status in ['draft', 'active', 'archived'] &&
+        (!('discount' in data) || (data.discount is string && data.discount.size() <= 50)) &&
+        (!('gst' in data) || (data.gst is number && data.gst >= 0 && data.gst <= 100)) &&
+        (!('image' in data) || (data.image is string && data.image.size() <= 2000000)) &&
+        (!('images' in data) || (data.images is list && data.images.size() <= 10)) &&
+        (!('brand' in data) || (data.brand is string && data.brand.size() <= 100)) &&
+        (!('gtin' in data) || (data.gtin is string && data.gtin.size() <= 14)) &&
+        (!('mpn' in data) || (data.mpn is string && data.mpn.size() <= 100)) &&
+        (!('features' in data) || (data.features is list && data.features.size() <= 12)) &&
+        (!('condition' in data) || data.condition in ['new', 'used', 'refurbished']) &&
+        (!('identifiersExist' in data) || data.identifiersExist is bool) &&
+        (!('merchantEnabled' in data) || data.merchantEnabled is bool) &&
+        (!('demo' in data) || data.demo is bool) &&
+        (!('id' in data) || (data.id is string && data.id.size() <= 100)) &&
+        (!('createdAt' in data) || data.createdAt is string || data.createdAt is timestamp) &&
+        (!('updatedAt' in data) || data.updatedAt is string || data.updatedAt is timestamp);
+    }
+
+    // Enquiry Submission Validator
+    function isValidEnquiry(data) {
+      return data.keys().hasAll(['name', 'email', 'subject', 'message', 'status', 'createdAt']) &&
+        data.keys().hasOnly(['id', 'name', 'email', 'phone', 'subject', 'message', 'status', 'createdAt', 'updatedAt']) &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+        isValidEmail(data.email) &&
+        data.subject is string && data.subject.size() > 0 && data.subject.size() <= 200 &&
+        data.message is string && data.message.size() >= 5 && data.message.size() <= 5000 &&
+        data.status in ['open', 'resolved'] &&
+        (!('id' in data) || (data.id is string && data.id.size() <= 100)) &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 30)) &&
+        (!('updatedAt' in data) || data.updatedAt is string || data.updatedAt is timestamp);
+    }
+
+    // Settings Store Validator (Admin writes)
+    function isValidSettings(data) {
+      return data.shippingFee is number && data.shippingFee >= 0 && data.shippingFee <= 100000 &&
+        data.freeShippingAbove is number && data.freeShippingAbove >= 0 &&
+        (!('siteUrl' in data) || (data.siteUrl is string && data.siteUrl.size() <= 500)) &&
+        (!('supportEmail' in data) || (data.supportEmail is string && data.supportEmail.size() <= 200)) &&
+        (!('businessName' in data) || (data.businessName is string && data.businessName.size() <= 150)) &&
+        (!('merchantLive' in data) || data.merchantLive is bool) &&
+        (!('slide1Title' in data) || (data.slide1Title is string && data.slide1Title.size() <= 500)) &&
+        (!('slide1Image' in data) || (data.slide1Image is string && data.slide1Image.size() <= 1000)) &&
+        (!('categories' in data) || (data.categories is list && data.categories.size() <= 50)) &&
+        (!('shippingPolicy' in data) || (data.shippingPolicy is string && data.shippingPolicy.size() <= 10000)) &&
+        (!('returnsPolicy' in data) || (data.returnsPolicy is string && data.returnsPolicy.size() <= 10000)) &&
+        (!('privacyPolicy' in data) || (data.privacyPolicy is string && data.privacyPolicy.size() <= 10000)) &&
+        (!('termsPolicy' in data) || (data.termsPolicy is string && data.termsPolicy.size() <= 10000));
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // 1. PRODUCTS COLLECTION
+    // - Authenticated users and visitors can read active catalog products.
+    // - Administrators can read all products (active, draft, archived) and perform writes.
+    // - Direct client writes are strictly denied for non-admins to prevent catalog tampering.
+    match /products/{productId} {
+      allow read: if (resource.data.status == 'active') || isAdmin();
+      allow create: if isAdmin() && isValidProduct(request.resource.data);
+      allow update: if isAdmin() &&
+                      isValidProduct(request.resource.data) &&
+                      (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+      allow delete: if isAdmin();
+    }
+
+    // 2. CUSTOMERS COLLECTION
+    // - Contains PII (email, address list, phone numbers).
+    // - Strictly owner-only read/write or admin-read.
+    // - Prevents privilege escalation and identity hijacking.
+    match /customers/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) &&
+                      isValidCustomer(request.resource.data) &&
+                      request.resource.data.email == request.auth.token.email;
+      allow update: if isOwner(userId) &&
+                      isValidCustomer(request.resource.data) &&
+                      request.resource.data.email == resource.data.email &&
+                      (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+      allow delete: if isAdmin();
+    }
+
+    // 3. ORDERS COLLECTION
+    // - Order placement, stock deduction, and payment capture execute server-side via trusted Node/Express API with transactions.
+    // - Direct client writes (create/update/delete) are denied to prevent price, quantity, and payment spoofing.
+    // - Customers can read their own orders (matching where('uid', '==', request.auth.uid)).
+    // - Admins can read all orders and create manual orders through admin credentials.
+    match /orders/{orderId} {
+      allow read: if (isAuthenticated() && resource.data.uid == request.auth.uid) || isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 4. ENQUIRIES COLLECTION
+    // - Enquiries contain contact PII (name, email, phone, message).
+    // - Public or logged-in users may submit enquiries with strict validation.
+    // - Reading or modifying enquiry status is restricted exclusively to administrators.
+    match /enquiries/{enquiryId} {
+      allow read: if isAdmin();
+      allow create: if isValidEnquiry(request.resource.data) &&
+                      request.resource.data.status == 'open';
+      allow update: if isAdmin() &&
+                      isValidEnquiry(request.resource.data) &&
+                      request.resource.data.createdAt == resource.data.createdAt &&
+                      request.resource.data.email == resource.data.email &&
+                      request.resource.data.message == resource.data.message;
+      allow delete: if isAdmin();
+    }
+
+    // 5. SETTINGS COLLECTION
+    // - Document 'store' holds public store configurations (shipping fees, policies).
+    // - Read allowed for anyone/clients.
+    // - Updates allowed only for administrators with strict schema validation.
+    match /settings/{settingId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidSettings(request.resource.data);
+      allow update: if isAdmin() && isValidSettings(request.resource.data);
+      allow delete: if isAdmin();
+    }
   }
 }
