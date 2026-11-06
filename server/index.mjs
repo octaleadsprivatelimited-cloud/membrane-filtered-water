@@ -113,11 +113,13 @@ app.post('/api/enquiries',rateLimit({windowMs:60_000,limit:10,standardHeaders:'d
 });
 app.use('/api/admin',authenticated,admin);
 app.get('/api/admin/enquiries',async(req,res)=>res.json((await all('enquiries')).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))));
+app.delete('/api/admin/enquiries/:id',async(req,res)=>{const ref=db.doc(`enquiries/${id(req.params.id)}`);await ref.delete();res.json({ok:true});});
 app.patch('/api/admin/enquiries/:id',async(req,res)=>{if(!['open','resolved'].includes(req.body.status))fail('Invalid enquiry status');const ref=db.doc(`enquiries/${id(req.params.id)}`);await db.runTransaction(async tx=>{if(!(await tx.get(ref)).exists)fail('Enquiry not found',404);tx.update(ref,{status:req.body.status,updatedAt:new Date().toISOString()});});res.json({ok:true});});
 registerOrderService(app,{db,authenticated,admin});
 app.get('/api/admin/products',async(req,res)=>res.json(await all('products')));
 app.post('/api/admin/products',async(req,res)=>{const p=product(req.body);const ref=db.collection('products').doc();await ref.set({...p,id:ref.id,createdAt:new Date().toISOString()});res.status(201).json({...p,id:ref.id});});
 app.put('/api/admin/products/:id',async(req,res)=>{const ref=db.doc(`products/${id(req.params.id)}`);await db.runTransaction(async tx=>{const old=await tx.get(ref);if(!old.exists)fail('Product not found',404);tx.set(ref,product(req.body,old.data()));});res.json({ok:true});});
+app.delete('/api/admin/products/:id',async(req,res)=>{const ref=db.doc(`products/${id(req.params.id)}`);await ref.delete();res.json({ok:true});});
 app.post('/api/admin/orders/manual',async(req,res)=>{
  const {email, customerName, orderId: customId, quantity, productName, price, status, paymentStatus} = req.body;
  const orderId = id(text(customId,100) || ('aq_manual_'+randomUUID()));
@@ -134,8 +136,10 @@ app.post('/api/admin/orders/manual',async(req,res)=>{
  res.status(201).json(order);
 });
 app.get('/api/admin/orders',async(req,res)=>res.json((await all('orders')).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))));
+app.delete('/api/admin/orders/:id',async(req,res)=>{const ref=db.doc(`orders/${id(req.params.id)}`);await ref.delete();res.json({ok:true});});
 app.patch('/api/admin/orders/:id',async(req,res)=>{const ref=db.doc(`orders/${id(req.params.id)}`);const next=req.body.status;await db.runTransaction(async tx=>{const s=await tx.get(ref);if(!s.exists)fail('Order not found',404);if((s.data().serviceRequests||[]).some(r=>r.type==='cancellation'&&r.status==='requested'))fail('Review the cancellation request before fulfillment.',409);if(!['paid','demo'].includes(s.data().paymentStatus))fail('Payment must be confirmed before fulfillment.',409);const current=s.data().status;const transitions={confirmed:['processing'],processing:['shipped'],shipped:['delivered']};if(next!==current&&!transitions[current]?.includes(next))fail('Invalid order status transition',409); tx.update(ref,{status:text(next,50),tracking:text(req.body.tracking,200),updatedAt:new Date().toISOString()});});res.json({ok:true});});
 app.get('/api/admin/customers',async(req,res)=>res.json(await all('customers')));
+app.delete('/api/admin/customers/:id',async(req,res)=>{const customerId=req.params.id;if(!/^[\w-]{1,100}$/.test(customerId))fail('Invalid customer ID');const ref=db.doc(`customers/${customerId}`);await ref.delete();try{if(auth)await auth.deleteUser(customerId);}catch(e){console.warn('Auth user deletion skipped/failed:',e.message);}res.json({ok:true});});
 app.put('/api/admin/settings',async(req,res)=>{const b=req.body;const siteUrl=text(b.siteUrl,500).replace(/\/$/,'');if(siteUrl&&!publicHttps(siteUrl))fail('Use a public HTTPS domain');
 const s={siteUrl,shippingFee:Number(b.shippingFee),freeShippingAbove:Number(b.freeShippingAbove),supportEmail:text(b.supportEmail,200),businessName:text(b.businessName,150),merchantLive:b.merchantLive===true,
 slide1Title:text(b.slide1Title,500),slide1Image:text(b.slide1Image,1000),categories:Array.isArray(b.categories)?b.categories.map(c=>text(c,100)).filter(Boolean):[]};

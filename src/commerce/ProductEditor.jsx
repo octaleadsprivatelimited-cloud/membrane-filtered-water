@@ -130,9 +130,32 @@ export default function ProductEditor({product, onDone, onClose, categories}) {
 
           {error && <p className="commerce-error" role="alert">{error}</p>}
           
-          <div className="commerce-modal-actions">
-            <button type="button" className="store-pill secondary" onClick={onClose}>Cancel</button>
-            <button type="submit" disabled={busy} className="store-pill">{busy ? 'Working...' : (product ? 'Save Changes' : 'Add Product')}</button>
+          <div className="commerce-modal-actions" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+            {product?.id ? (
+              <button 
+                type="button" 
+                disabled={busy} 
+                onClick={async () => {
+                  if (!window.confirm(`Are you sure you want to permanently delete "${product.name}"?`)) return;
+                  setBusy(true);
+                  setError('');
+                  try {
+                    await api(`/admin/products/${product.id}`, { method: 'DELETE' });
+                    onDone();
+                  } catch (e) {
+                    setError(e.message);
+                    setBusy(false);
+                  }
+                }}
+                style={{color: '#dc2626', background: 'transparent', border: '1px solid #fecaca', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500'}}
+              >
+                Delete Product
+              </button>
+            ) : <span />}
+            <div style={{display: 'flex', gap: '10px'}}>
+              <button type="button" className="store-pill secondary" onClick={onClose}>Cancel</button>
+              <button type="submit" disabled={busy} className="store-pill">{busy ? 'Working...' : (product ? 'Save Changes' : 'Add Product')}</button>
+            </div>
           </div>
         </form>
       </section>
