@@ -98,8 +98,10 @@ app.post('/api/orders',authenticated,async(req,res)=>{
 });
 app.post('/api/orders/:id/payment',authenticated,async(req,res)=>{
  const ref=db.doc(`orders/${id(req.params.id)}`);const snap=await ref.get();if(!snap.exists||snap.data().uid!==req.user.uid)fail('Order not found',404);const order=snap.data();if(order.paymentMethod!=='cashfree'||order.status!=='pending_payment')fail('Order is not awaiting payment',409);
- const site=process.env.PUBLIC_STORE_URL||appConfig.frontendUrl;if(!publicHttps(site))fail('Configure a public HTTPS checkout domain first',503);
- const remote=await cashfree('/orders',{method:'POST',headers:{'x-idempotency-key':order.paymentKey},body:JSON.stringify({order_id:order.id,order_amount:order.totalPaise/100,order_currency:'INR',customer_details:{customer_id:order.uid,customer_email:order.email,customer_phone:order.address.phone.replace(/\D/g,'').slice(-10),customer_name:order.address.name},order_meta:{return_url:`${site}/account?order=${order.id}`,notify_url:`${site}/api/payments/cashfree/webhook`}})});
+ const site=(process.env.PUBLIC_STORE_URL||appConfig.frontendUrl||'').replace(/\/$/,'');
+ const clientOrigin=(req.headers.origin||'').replace(/\/$/,'');
+ const effectiveSite=publicHttps(site)?site:(clientOrigin||'https://www.membraneiq.com');
+ const remote=await cashfree('/orders',{method:'POST',headers:{'x-idempotency-key':order.paymentKey},body:JSON.stringify({order_id:order.id,order_amount:order.totalPaise/100,order_currency:'INR',customer_details:{customer_id:order.uid,customer_email:order.email,customer_phone:order.address.phone.replace(/\D/g,'').slice(-10),customer_name:order.address.name},order_meta:{return_url:`${effectiveSite}/account?order=${order.id}`,notify_url:`${effectiveSite}/api/payments/cashfree/webhook`}})});
  await ref.update({cashfreeOrderId:remote.cf_order_id});res.json({paymentSessionId:remote.payment_session_id,mode:paymentMode()});
 });
 app.post('/api/orders/:id/verify',authenticated,async(req,res)=>{const s=await db.doc(`orders/${id(req.params.id)}`).get();if(!s.exists||s.data().uid!==req.user.uid)fail('Order not found',404);if(s.data().paymentMethod!=='cashfree')fail('Not a Cashfree order');res.json(await settlePayment(s.id));});
